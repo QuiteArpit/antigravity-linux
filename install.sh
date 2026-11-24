@@ -630,7 +630,7 @@ TMP_FETCH=\$(mktemp "\$CACHE_DIR/install.sh.XXXXXX" 2>/dev/null || mktemp /tmp/i
 FETCH_OK=0
 
 if curl -fsSL --connect-timeout 5 --retry 1 -H "Cache-Control: max-age=300" "\$SCRIPT_URL" -o "\$TMP_FETCH" 2>/dev/null; then
-  if bash -n "\$TMP_FETCH" 2>/dev/null; then
+  if [ -s "\$TMP_FETCH" ] && bash -n "\$TMP_FETCH" 2>/dev/null; then
     chmod 0755 "\$TMP_FETCH"
     mv -f "\$TMP_FETCH" "\$LOCAL_SCRIPT"
     FETCH_OK=1
@@ -647,7 +647,7 @@ if [ "\$FETCH_OK" -eq 0 ]; then
   echo "Notice: Remote unreachable; running with locally cached installer (\$LOCAL_SCRIPT)." >&2
 fi
 
-exec bash "\$LOCAL_SCRIPT" "\$@"
+exec env "ANTIGRAVITY_LINUX_INSTALLER_URL=\$SCRIPT_URL" bash "\$LOCAL_SCRIPT" "\$@"
 SH
   chmod +x /usr/local/bin/antigravity-linux
 

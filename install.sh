@@ -86,11 +86,11 @@ extract_archive() {
   local dest="$2"
   if [ "$IS_TUI_ACTIVE" -eq 1 ]; then
     printf '   Extracting archive... ' >&4
-    tar -xzf "$archive" -C "$dest" --checkpoint=500 --checkpoint-action='echo -ne "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\bExtracting... [%u files]"' >&4 2>&4
+    tar -xzf "$archive" -C "$dest" --checkpoint=500 --checkpoint-action=dot >&4 2>&4
     printf '\r\033[K   Extracting archive: Done.\n' >&4
   elif [ -t 1 ]; then
     printf 'Extracting archive... '
-    tar -xzf "$archive" -C "$dest" --checkpoint=500 --checkpoint-action='echo -ne "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\bExtracting... [%u files]"'
+    tar -xzf "$archive" -C "$dest" --checkpoint=500 --checkpoint-action=dot
     printf '\r\033[KExtracting archive: Done.\n'
   else
     tar -xzf "$archive" -C "$dest"
@@ -179,13 +179,10 @@ require_root_or_reexec() {
   err "System-wide install needs root. Use: curl -fsSL <installer-url> | sudo -E env ANTIGRAVITY_LINUX_INSTALLER_URL=<installer-url> bash"
 }
 
-install_deps() {
+install_base_deps() {
   [ "$INSTALL_DEPS" -eq 1 ] || return 0
   if command -v apt-get >/dev/null 2>&1; then
     local packages=(ca-certificates curl tar python3 desktop-file-utils xdg-utils)
-    if [ "$INSTALL_NAUTILUS" -eq 1 ] && [ "$INSTALL_IDE" -eq 1 ]; then
-      packages+=(python3-nautilus)
-    fi
     local missing=()
     for pkg in "${packages[@]}"; do
       if ! dpkg -s "$pkg" 2>/dev/null | grep -q 'install ok installed'; then
@@ -195,19 +192,11 @@ install_deps() {
     if [ ${#missing[@]} -gt 0 ]; then
       export DEBIAN_FRONTEND=noninteractive
       log "Installing missing package dependencies: ${missing[*]}..."
-      if [ "$IS_TUI_ACTIVE" -eq 1 ]; then
-        apt-get update >&4 2>&4
-        apt-get install -y "${missing[@]}" >&4 2>&4
-      else
-        apt-get update
-        apt-get install -y "${missing[@]}"
-      fi
+      apt-get update
+      apt-get install -y "${missing[@]}"
     fi
   elif command -v dnf >/dev/null 2>&1; then
     local packages=(ca-certificates curl tar python3 desktop-file-utils xdg-utils)
-    if [ "$INSTALL_NAUTILUS" -eq 1 ] && [ "$INSTALL_IDE" -eq 1 ] && command -v nautilus >/dev/null 2>&1; then
-      packages+=(nautilus-python)
-    fi
     local missing=()
     for pkg in "${packages[@]}"; do
       if ! rpm -q "$pkg" >/dev/null 2>&1; then
@@ -216,14 +205,38 @@ install_deps() {
     done
     if [ ${#missing[@]} -gt 0 ]; then
       log "Installing missing package dependencies: ${missing[*]}..."
-      if [ "$IS_TUI_ACTIVE" -eq 1 ]; then
-        dnf install -y "${missing[@]}" >&4 2>&4
-      else
-        dnf install -y "${missing[@]}"
-      fi
+      dnf install -y "${missing[@]}"
     fi
   else
     for c in curl tar python3; do need "$c"; done
+  fi
+}
+
+install_deps() {
+  [ "$INSTALL_DEPS" -eq 1 ] || return 0
+  if [ "$INSTALL_NAUTILUS" -eq 1 ] && [ "$INSTALL_IDE" -eq 1 ]; then
+    if command -v apt-get >/dev/null 2>&1; then
+      if ! dpkg -s python3-nautilus 2>/dev/null | grep -q 'install ok installed'; then
+        export DEBIAN_FRONTEND=noninteractive
+        log "Installing missing package dependency: python3-nautilus..."
+        if [ "$IS_TUI_ACTIVE" -eq 1 ]; then
+          apt-get update >&4 2>&4
+          apt-get install -y python3-nautilus >&4 2>&4
+        else
+          apt-get update
+          apt-get install -y python3-nautilus
+        fi
+      fi
+    elif command -v dnf >/dev/null 2>&1 && command -v nautilus >/dev/null 2>&1; then
+      if ! rpm -q nautilus-python >/dev/null 2>&1; then
+        log "Installing missing package dependency: nautilus-python..."
+        if [ "$IS_TUI_ACTIVE" -eq 1 ]; then
+          dnf install -y nautilus-python >&4 2>&4
+        else
+          dnf install -y nautilus-python
+        fi
+      fi
+    fi
   fi
 }
 
@@ -591,7 +604,9 @@ install_manager_command() {
 
   # Cache the currently running installer script locally
   if [ -n "${BASH_SOURCE[0]:-}" ] && [ -r "${BASH_SOURCE[0]}" ] && [ "${BASH_SOURCE[0]}" != "bash" ] && [ "${BASH_SOURCE[0]}" != "sh" ]; then
-    cp -f "${BASH_SOURCE[0]}" "$cache_dir/install.sh"
+    if ! [ "${BASH_SOURCE[0]}" -ef "$cache_dir/install.sh" ]; then
+      cp -f "${BASH_SOURCE[0]}" "$cache_dir/install.sh"
+    fi
     chmod 0755 "$cache_dir/install.sh"
   elif [ ! -f "$cache_dir/install.sh" ]; then
     curl -fsSL --connect-timeout 5 "$installer_url" -o "$cache_dir/install.sh" 2>/dev/null && chmod 0755 "$cache_dir/install.sh" || true
@@ -663,15 +678,25 @@ print_status() {
   else
     log "- Antigravity IDE: not installed"
   fi
+  local user_home=""
+  if [ -n "${SUDO_USER:-}" ] && [ "${SUDO_USER:-}" != "root" ]; then
+    user_home=$(getent passwd "$SUDO_USER" 2>/dev/null | cut -d: -f6 || echo "")
+  fi
   local cli_path=""
-  if [ -x /usr/local/bin/agy ]; then
+  if [ -n "$user_home" ] && [ -x "$user_home/.local/bin/agy" ]; then
+    cli_path="$user_home/.local/bin/agy"
+  elif [ -x /usr/local/bin/agy ]; then
     cli_path="/usr/local/bin/agy"
   elif command -v agy >/dev/null 2>&1; then
     cli_path=$(command -v agy)
   fi
   if [ -n "$cli_path" ]; then
-    local cli_ver
-    cli_ver=$("$cli_path" --version 2>/dev/null | head -n1 || echo "")
+    local cli_ver=""
+    if [ -n "${SUDO_USER:-}" ] && [ "${SUDO_USER:-}" != "root" ] && [ -n "$user_home" ] && [[ "$cli_path" == "$user_home"* ]]; then
+      cli_ver=$(sudo -u "$SUDO_USER" "$cli_path" --version 2>/dev/null | head -n1 || echo "")
+    else
+      cli_ver=$("$cli_path" --version 2>/dev/null | head -n1 || echo "")
+    fi
     log "- Antigravity CLI: installed (${cli_ver:-active} at $cli_path)"
   else
     log "- Antigravity CLI: not installed"
@@ -719,15 +744,25 @@ print_success_summary() {
     v=$(installed_version /opt/antigravity-ide/.antigravity-linux-version)
     log "- Antigravity IDE: installed (v${v:-unknown}) -> /usr/local/bin/antigravity-ide"
   fi
+  local user_home=""
+  if [ -n "${SUDO_USER:-}" ] && [ "${SUDO_USER:-}" != "root" ]; then
+    user_home=$(getent passwd "$SUDO_USER" 2>/dev/null | cut -d: -f6 || echo "")
+  fi
   local cli_path=""
-  if [ -x /usr/local/bin/agy ]; then
+  if [ -n "$user_home" ] && [ -x "$user_home/.local/bin/agy" ]; then
+    cli_path="$user_home/.local/bin/agy"
+  elif [ -x /usr/local/bin/agy ]; then
     cli_path="/usr/local/bin/agy"
   elif command -v agy >/dev/null 2>&1; then
     cli_path=$(command -v agy)
   fi
   if [ -n "$cli_path" ]; then
-    local cli_ver
-    cli_ver=$("$cli_path" --version 2>/dev/null | head -n1 || echo "")
+    local cli_ver=""
+    if [ -n "${SUDO_USER:-}" ] && [ "${SUDO_USER:-}" != "root" ] && [ -n "$user_home" ] && [[ "$cli_path" == "$user_home"* ]]; then
+      cli_ver=$(sudo -u "$SUDO_USER" "$cli_path" --version 2>/dev/null | head -n1 || echo "")
+    else
+      cli_ver=$("$cli_path" --version 2>/dev/null | head -n1 || echo "")
+    fi
     log "- Antigravity CLI: installed (v${cli_ver:-active} at $cli_path)"
   fi
   log ""
@@ -786,7 +821,11 @@ run_stepper_wizard() {
     cli_bin=$(command -v agy)
   fi
   if [ -n "$cli_bin" ]; then
-    cur_cli=$("$cli_bin" --version 2>/dev/null | head -n1 || echo "")
+    if [ -n "${SUDO_USER:-}" ] && [ "${SUDO_USER:-}" != "root" ] && [ -n "$user_home" ] && [[ "$cli_bin" == "$user_home"* ]]; then
+      cur_cli=$(sudo -u "$SUDO_USER" "$cli_bin" --version 2>/dev/null | head -n1 || echo "")
+    else
+      cur_cli=$("$cli_bin" --version 2>/dev/null | head -n1 || echo "")
+    fi
   fi
 
   # Dynamic descriptions based on installed vs latest release
@@ -856,7 +895,11 @@ run_stepper_wizard() {
     opt_desktop=1
     opt_ide=1
     [ -n "$cli_bin" ] && opt_cli=1
-    opt_nautilus=$has_nautilus
+    if [ "$INSTALL_NAUTILUS" -eq 1 ]; then
+      opt_nautilus=$has_nautilus
+    else
+      opt_nautilus=0
+    fi
   fi
 
   local total_opts=4
@@ -1053,6 +1096,8 @@ main() {
   mkdir -p "$tmp_parent"
   tmpdir=$(mktemp -d "$tmp_parent/$PROJECT_NAME.XXXXXX")
   trap cleanup_all EXIT INT TERM
+
+  install_base_deps
 
   local js=""
   local latest_desktop_ver="" latest_ide_ver=""

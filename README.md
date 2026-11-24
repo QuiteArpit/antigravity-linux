@@ -66,7 +66,7 @@ Use the interactive wizard to select components, toggle Force Reinstall, and obs
 
 Append `-y` (or specific flags) to run non-interactively in automated scripts or CI/CD pipelines:
 
-Install all components:
+Install Desktop app and IDE:
 
 ```bash
 INSTALLER_URL="https://quitearpit.github.io/antigravity-linux/install.sh"

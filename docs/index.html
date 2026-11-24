@@ -463,13 +463,11 @@
               class="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.05] mb-6"
             >
               Install Antigravity 2.0
-              <span class="block text-slate-400">with one command</span>
+              <span class="block text-slate-400">with interactive TUI</span>
             </h1>
 
             <p class="text-lg text-slate-400 max-w-lg mb-10 leading-relaxed">
-              Resolves Google's official tarball at install time, places it
-              under <code class="font-mono text-teal-400 text-sm">/opt</code>,
-              adds launchers, and gives you a clean update command.
+              Dynamically resolves Google's official tarballs, features a full-screen interactive TUI installer &amp; updater with live version checking, handles the official CLI, and supports offline-first local caching.
             </p>
 
             <div class="flex flex-wrap gap-4">
@@ -493,21 +491,27 @@
                 <div class="w-2.5 h-2.5 rounded-full bg-yellow-500/50"></div>
                 <div class="w-2.5 h-2.5 rounded-full bg-green-500/50"></div>
               </div>
-              <span class="text-[10px] font-mono text-slate-500 uppercase tracking-widest">bash — installer</span>
+              <span class="text-[10px] font-mono text-slate-500 uppercase tracking-widest">bash — interactive installer &amp; updater</span>
             </div>
             <div class="p-6 font-mono text-sm leading-relaxed overflow-x-auto">
               <div class="flex justify-between mb-4 items-center">
-                <span class="text-teal-400">$ install.sh</span>
+                <span class="text-teal-400">$ sudo antigravity-linux</span>
                 <button class="copy-btn text-[10px] uppercase font-bold tracking-tighter text-slate-500 hover:text-white transition-colors" data-copy='INSTALLER_URL="https://quitearpit.github.io/antigravity-linux/install.sh" \
-curl -fsSL "$INSTALLER_URL" | sudo -E env ANTIGRAVITY_LINUX_INSTALLER_URL="$INSTALLER_URL" bash -s -- --all'>Copy</button>
+curl -fsSL "$INSTALLER_URL" | sudo -E env ANTIGRAVITY_LINUX_INSTALLER_URL="$INSTALLER_URL" bash'>Copy</button>
               </div>
-              <code class="text-slate-400">
-                <span class="text-slate-500"># Resolving official tarballs...</span><br>
-                <span class="text-sky-400">OK</span> Fetching Google Antigravity 2.0<br>
-                <span class="text-sky-400">OK</span> Mapping /opt/antigravity<br>
-                <span class="text-sky-400">OK</span> Injecting desktop launchers<br>
+              <code class="text-slate-400 text-xs">
+                <span class="text-teal-400 font-bold">   Interactive Installer &amp; Updater</span><br>
+                <span class="text-slate-600">   ─────────────────────────────────────────────────────────</span><br>
+                <span class="text-emerald-400">   [✓] 1. Architecture &amp; Release Info</span> (Latest: v2.35.0)<br>
+                <span class="text-sky-400">   [●] 2. Component Selection</span>         (Desktop, IDE, CLI)<br>
+                <span class="text-slate-500">   [ ] 3. Download &amp; Deploy</span>           Google tarballs<br>
                 <br>
-                <span class="text-emerald-400">Installation complete.</span>
+                <span class="text-slate-300">   ❯ [✓] Antigravity 2.0 Desktop</span>  <span class="text-slate-500">(v2.35.0 • Up to date)</span><br>
+                <span class="text-slate-300">     [✓] Antigravity IDE</span>          <span class="text-slate-500">(v2.8.0 • Up to date)</span><br>
+                <span class="text-slate-300">     [✓] Antigravity CLI (agy)</span>    <span class="text-slate-500">(v1.5.16 installed)</span><br>
+                <span class="text-slate-300">     [ ] Force Reinstall</span>         <span class="text-slate-500">(Overwrite)</span><br>
+                <br>
+                <span class="text-amber-400">   Controls: [↑/↓] Navigate • [Space] Toggle • [Enter] Proceed</span>
               </code>
             </div>
           </div>
@@ -532,15 +536,13 @@ curl -fsSL "$INSTALLER_URL" | sudo -E env ANTIGRAVITY_LINUX_INSTALLER_URL="$INST
                 stroke-linecap="round"
                 stroke-linejoin="round"
               >
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                <polyline points="7 10 12 15 17 10" />
-                <line x1="12" y1="15" x2="12" y2="3" />
+                <polyline points="4 17 10 11 4 5" />
+                <line x1="12" y1="19" x2="20" y2="19" />
               </svg>
             </div>
-            <h3 class="font-semibold mb-2 text-white">Official tarballs</h3>
+            <h3 class="font-semibold mb-2 text-white">Interactive TUI &amp; Updater</h3>
             <p class="text-sm text-slate-400 leading-relaxed">
-              No binary mirrors or unofficial repackaging. Downloads directly
-              from Google at install time.
+              Full-screen wizard with live Google release comparison, in-TUI progress bars, and a built-in force reinstall toggle.
             </p>
           </article>
 
@@ -558,15 +560,14 @@ curl -fsSL "$INSTALLER_URL" | sudo -E env ANTIGRAVITY_LINUX_INSTALLER_URL="$INST
                 stroke-linecap="round"
                 stroke-linejoin="round"
               >
-                <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
-                <line x1="8" y1="21" x2="16" y2="21" />
-                <line x1="12" y1="17" x2="12" y2="21" />
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
               </svg>
             </div>
-            <h3 class="font-semibold mb-2 text-white">Desktop integration</h3>
+            <h3 class="font-semibold mb-2 text-white">Official Tarballs &amp; CLI</h3>
             <p class="text-sm text-slate-400 leading-relaxed">
-              App menu entries, icons, CLI launchers, MIME associations, and
-              optional file browser integration.
+              Downloads official tarballs directly from Google. Installs Desktop 2.0, Antigravity IDE, and the official <code class="text-teal-400">agy</code> CLI.
             </p>
           </article>
 
@@ -584,17 +585,14 @@ curl -fsSL "$INSTALLER_URL" | sudo -E env ANTIGRAVITY_LINUX_INSTALLER_URL="$INST
                 stroke-linecap="round"
                 stroke-linejoin="round"
               >
-                <polyline points="23 4 23 10 17 10" />
-                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+                <circle cx="12" cy="12" r="10" />
+                <line x1="2" y1="12" x2="22" y2="12" />
+                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
               </svg>
             </div>
-            <h3 class="font-semibold mb-2 text-white">Built-in updates</h3>
+            <h3 class="font-semibold mb-2 text-white">Multi-Distro &amp; Offline-First</h3>
             <p class="text-sm text-slate-400 leading-relaxed">
-              Run
-              <code class="font-mono text-teal-400 text-xs"
-                >antigravity-linux update</code
-              >
-              anytime to fetch the latest release.
+              Native dependencies for Debian, Ubuntu, Fedora, and RHEL. Automatically caches installer locally for offline resilience.
             </p>
           </article>
         </div>
@@ -616,24 +614,24 @@ curl -fsSL "$INSTALLER_URL" | sudo -E env ANTIGRAVITY_LINUX_INSTALLER_URL="$INST
 
           <h2 class="text-3xl font-bold mb-2 text-white">Recommended command</h2>
           <p class="text-slate-400 mb-8">
-            Install both Antigravity 2.0 desktop app and IDE.
+            Launch the interactive TUI installer to inspect release versions, select components, and install with live progress:
           </p>
 
           <div class="code-block">
             <div class="code-header">
               <span class="text-xs text-slate-400 font-mono"
-                >antigravity + IDE</span
+                >interactive setup (TUI)</span
               >
               <button
                 class="btn-copy"
                 data-copy='INSTALLER_URL="https://quitearpit.github.io/antigravity-linux/install.sh" \
-curl -fsSL "$INSTALLER_URL" | sudo -E env ANTIGRAVITY_LINUX_INSTALLER_URL="$INSTALLER_URL" bash -s -- --all'
+curl -fsSL "$INSTALLER_URL" | sudo -E env ANTIGRAVITY_LINUX_INSTALLER_URL="$INSTALLER_URL" bash'
               >
                 Copy
               </button>
             </div>
             <div class="code-content font-mono text-slate-300">
-              <code><span class="syn-var">INSTALLER_URL</span>=<span class="syn-str">"https://quitearpit.github.io/antigravity-linux/install.sh"</span> \<br />curl -fsSL <span class="syn-str">"$INSTALLER_URL"</span> | sudo -E env <span class="syn-var">ANTIGRAVITY_LINUX_INSTALLER_URL</span>=<span class="syn-str">"$INSTALLER_URL"</span> bash -s -- <span class="syn-arg">--all</span></code>
+              <code><span class="syn-var">INSTALLER_URL</span>=<span class="syn-str">"https://quitearpit.github.io/antigravity-linux/install.sh"</span> \<br />curl -fsSL <span class="syn-str">"$INSTALLER_URL"</span> | sudo -E env <span class="syn-var">ANTIGRAVITY_LINUX_INSTALLER_URL</span>=<span class="syn-str">"$INSTALLER_URL"</span> bash</code>
             </div>
           </div>
 
@@ -642,25 +640,25 @@ curl -fsSL "$INSTALLER_URL" | sudo -E env ANTIGRAVITY_LINUX_INSTALLER_URL="$INST
               <div>
                 <h3 class="font-semibold mb-3 flex items-center gap-2 text-white">
                   <span class="w-2 h-2 rounded-full bg-slate-600"></span>
-                  Desktop app (Agent) only
+                  Non-interactive / Headless (--all -y)
                 </h3>
                 <div class="code-block">
                   <div
                     class="px-4 py-3 flex justify-between items-center border-b border-slate-700"
                   >
                     <span class="text-xs text-slate-400 font-mono"
-                      >--desktop</span
+                      >automated-install.sh</span
                     >
                     <button
                       class="btn-copy text-xs"
                       data-copy='INSTALLER_URL="https://quitearpit.github.io/antigravity-linux/install.sh" \
-curl -fsSL "$INSTALLER_URL" | sudo -E env ANTIGRAVITY_LINUX_INSTALLER_URL="$INSTALLER_URL" bash -s --'
+curl -fsSL "$INSTALLER_URL" | sudo -E env ANTIGRAVITY_LINUX_INSTALLER_URL="$INSTALLER_URL" bash -s -- --all -y'
                     >
                       Copy
                     </button>
                   </div>
                   <div class="code-content font-mono text-xs text-slate-300">
-                    <code><span class="syn-var">INSTALLER_URL</span>=<span class="syn-str">"https://quitearpit.github.io/antigravity-linux/install.sh"</span> \<br />curl -fsSL <span class="syn-str">"$INSTALLER_URL"</span> | sudo -E env <span class="syn-var">ANTIGRAVITY_LINUX_INSTALLER_URL</span>=<span class="syn-str">"$INSTALLER_URL"</span> bash -s --</code>
+                    <code><span class="syn-var">INSTALLER_URL</span>=<span class="syn-str">"https://quitearpit.github.io/antigravity-linux/install.sh"</span> \<br />curl -fsSL <span class="syn-str">"$INSTALLER_URL"</span> | sudo -E env <span class="syn-var">ANTIGRAVITY_LINUX_INSTALLER_URL</span>=<span class="syn-str">"$INSTALLER_URL"</span> bash -s -- <span class="syn-arg">--all -y</span></code>
                   </div>
                 </div>
               </div>
@@ -668,23 +666,23 @@ curl -fsSL "$INSTALLER_URL" | sudo -E env ANTIGRAVITY_LINUX_INSTALLER_URL="$INST
               <div>
                 <h3 class="font-semibold mb-3 flex items-center gap-2 text-white">
                   <span class="w-2 h-2 rounded-full bg-slate-600"></span>
-                  IDE only
+                  IDE Only (--ide -y)
                 </h3>
                 <div class="code-block">
                   <div
                     class="px-4 py-3 flex justify-between items-center border-b border-slate-700"
                   >
-                    <span class="text-xs text-slate-400 font-mono">--ide</span>
+                    <span class="text-xs text-slate-400 font-mono">--ide -y</span>
                     <button
                       class="btn-copy text-xs"
                       data-copy='INSTALLER_URL="https://quitearpit.github.io/antigravity-linux/install.sh" \
-curl -fsSL "$INSTALLER_URL" | sudo -E env ANTIGRAVITY_LINUX_INSTALLER_URL="$INSTALLER_URL" bash -s -- --ide'
+curl -fsSL "$INSTALLER_URL" | sudo -E env ANTIGRAVITY_LINUX_INSTALLER_URL="$INSTALLER_URL" bash -s -- --ide -y'
                     >
                       Copy
                     </button>
                   </div>
                   <div class="code-content font-mono text-xs text-slate-300">
-                    <code><span class="syn-var">INSTALLER_URL</span>=<span class="syn-str">"https://quitearpit.github.io/antigravity-linux/install.sh"</span> \<br />curl -fsSL <span class="syn-str">"$INSTALLER_URL"</span> | sudo -E env <span class="syn-var">ANTIGRAVITY_LINUX_INSTALLER_URL</span>=<span class="syn-str">"$INSTALLER_URL"</span> bash -s -- <span class="syn-arg">--ide</span></code>
+                    <code><span class="syn-var">INSTALLER_URL</span>=<span class="syn-str">"https://quitearpit.github.io/antigravity-linux/install.sh"</span> \<br />curl -fsSL <span class="syn-str">"$INSTALLER_URL"</span> | sudo -E env <span class="syn-var">ANTIGRAVITY_LINUX_INSTALLER_URL</span>=<span class="syn-str">"$INSTALLER_URL"</span> bash -s -- <span class="syn-arg">--ide -y</span></code>
                   </div>
                 </div>
               </div>
@@ -702,13 +700,13 @@ curl -fsSL "$INSTALLER_URL" | sudo -E env ANTIGRAVITY_LINUX_INSTALLER_URL="$INST
                 <button
                   class="btn-copy"
                   data-copy='INSTALLER_URL="https://raw.githubusercontent.com/QuiteArpit/antigravity-linux/main/install.sh" \
-curl -fsSL "$INSTALLER_URL" | sudo -E env ANTIGRAVITY_LINUX_INSTALLER_URL="$INSTALLER_URL" bash -s -- --all'
+curl -fsSL "$INSTALLER_URL" | sudo -E env ANTIGRAVITY_LINUX_INSTALLER_URL="$INSTALLER_URL" bash'
                 >
                   Copy
                 </button>
               </div>
               <div class="code-content font-mono text-slate-300 text-sm">
-                <code><span class="syn-var">INSTALLER_URL</span>=<span class="syn-str">"https://raw.githubusercontent.com/QuiteArpit/antigravity-linux/main/install.sh"</span> \<br />curl -fsSL <span class="syn-str">"$INSTALLER_URL"</span> | sudo -E env <span class="syn-var">ANTIGRAVITY_LINUX_INSTALLER_URL</span>=<span class="syn-str">"$INSTALLER_URL"</span> bash -s -- <span class="syn-arg">--all</span></code>
+                <code><span class="syn-var">INSTALLER_URL</span>=<span class="syn-str">"https://raw.githubusercontent.com/QuiteArpit/antigravity-linux/main/install.sh"</span> \<br />curl -fsSL <span class="syn-str">"$INSTALLER_URL"</span> | sudo -E env <span class="syn-var">ANTIGRAVITY_LINUX_INSTALLER_URL</span>=<span class="syn-str">"$INSTALLER_URL"</span> bash</code>
               </div>
             </div>
           </div>
@@ -716,7 +714,7 @@ curl -fsSL "$INSTALLER_URL" | sudo -E env ANTIGRAVITY_LINUX_INSTALLER_URL="$INST
         </section>
 
         <!-- Update section -->
-        <section id="update" class="section-card p-8 reveal" id="update">
+        <section id="update" class="section-card p-8 reveal">
           <div class="grid lg:grid-cols-2 gap-10">
             <div>
               <div class="flex items-center gap-3 mb-6">
@@ -726,10 +724,9 @@ curl -fsSL "$INSTALLER_URL" | sudo -E env ANTIGRAVITY_LINUX_INSTALLER_URL="$INST
                 >
                 <div class="flex-1 h-px bg-slate-700"></div>
               </div>
-              <h2 class="text-3xl font-bold mb-3 text-white">Keep it current</h2>
+              <h2 class="text-3xl font-bold mb-3 text-white">Interactive updater &amp; offline cache</h2>
               <p class="text-slate-400 leading-relaxed">
-                The installer registers its URL during setup, so updates work
-                without remembering the original curl command. Look at the FAQ section for more details.
+                The helper commands automatically launch the interactive TUI updater with live release comparisons and in-TUI progress bars. The script automatically caches itself locally at <code class="text-teal-400 font-mono">/etc/antigravity-linux/install.sh</code> for reliable offline execution.
               </p>
             </div>
             <div>
@@ -738,7 +735,7 @@ curl -fsSL "$INSTALLER_URL" | sudo -E env ANTIGRAVITY_LINUX_INSTALLER_URL="$INST
                   <span class="text-xs text-slate-400 font-mono">terminal</span>
                   <button
                     class="btn-copy"
-                    data-copy="sudo antigravity-linux update --all
+                    data-copy="sudo antigravity-linux
 sudo update-antigravity
 sudo update-antigravity-ide"
                   >
@@ -747,7 +744,7 @@ sudo update-antigravity-ide"
                 </div>
                 <div class="code-content font-mono text-slate-300 text-sm">
                   <code
-                    ><span class="syn-cmd">sudo</span> antigravity-linux update <span class="syn-arg">--all</span><br />
+                    ><span class="syn-cmd">sudo</span> antigravity-linux<br />
                     <span class="syn-cmd">sudo</span> update-antigravity<br />
                     <span class="syn-cmd">sudo</span> update-antigravity-ide</code
                   >
@@ -881,6 +878,14 @@ sudo bash install.sh --uninstall"
                   </td>
                 </tr>
                 <tr>
+                  <td class="text-slate-300">Antigravity CLI</td>
+                  <td>
+                    <code class="font-mono text-sm text-teal-400"
+                      >~/.local/bin/agy</code
+                    >
+                  </td>
+                </tr>
+                <tr>
                   <td class="text-slate-300">CLI launchers</td>
                   <td>
                     <code class="font-mono text-sm text-teal-400"
@@ -893,6 +898,14 @@ sudo bash install.sh --uninstall"
                   <td>
                     <code class="font-mono text-sm text-teal-400"
                       >/usr/local/bin/antigravity-linux, /usr/local/bin/update-antigravity*</code
+                    >
+                  </td>
+                </tr>
+                <tr>
+                  <td class="text-slate-300">Cached installer</td>
+                  <td>
+                    <code class="font-mono text-sm text-teal-400"
+                      >/etc/antigravity-linux/install.sh</code
                     >
                   </td>
                 </tr>
@@ -1183,22 +1196,22 @@ curl -fsSL "$INSTALLER_URL" | sudo -E env ANTIGRAVITY_LINUX_INSTALLER_URL="$INST
             <details class="faq-item" id="faq-update">
               <summary><span>How do I update Antigravity?</span><a class="faq-link" href="#faq-update" aria-label="Link to this FAQ">#</a></summary>
               <div class="faq-body">
-                <p>Use the update helper installed by the published URL flow. There is one command for both apps and separate shortcuts for each product.</p>
+                <p>Running <code>sudo antigravity-linux</code> opens the interactive TUI updater, displaying current vs. latest versions and live extraction progress. You can also run targeted or non-interactive updates:</p>
                 <div class="code-block mt-4">
-                  <div class="code-header"><span class="text-xs text-slate-400 font-mono">update-all.sh</span><button class="btn-copy" data-copy='sudo antigravity-linux update --all'>Copy</button></div>
-                  <div class="code-content font-mono text-slate-300 text-sm"><code><span class="syn-cmd">sudo</span> antigravity-linux update <span class="syn-arg">--all</span></code></div>
+                  <div class="code-header"><span class="text-xs text-slate-400 font-mono">update-interactive.sh</span><button class="btn-copy" data-copy='sudo antigravity-linux'>Copy</button></div>
+                  <div class="code-content font-mono text-slate-300 text-sm"><code><span class="syn-cmd">sudo</span> antigravity-linux</code></div>
                 </div>
-                <p>Updates both Antigravity 2.0 and Antigravity IDE.</p>
+                <p>Opens the interactive TUI updater with live release comparison.</p>
                 <div class="code-block mt-4">
                   <div class="code-header"><span class="text-xs text-slate-400 font-mono">update-desktop.sh</span><button class="btn-copy" data-copy='sudo update-antigravity'>Copy</button></div>
                   <div class="code-content font-mono text-slate-300 text-sm"><code><span class="syn-cmd">sudo</span> update-antigravity</code></div>
                 </div>
-                <p>Updates only the Antigravity 2.0 desktop app.</p>
+                <p>Opens the updater with Antigravity 2.0 desktop app pre-selected.</p>
                 <div class="code-block mt-4">
                   <div class="code-header"><span class="text-xs text-slate-400 font-mono">update-ide.sh</span><button class="btn-copy" data-copy='sudo update-antigravity-ide'>Copy</button></div>
                   <div class="code-content font-mono text-slate-300 text-sm"><code><span class="syn-cmd">sudo</span> update-antigravity-ide</code></div>
                 </div>
-                <p>Updates only Antigravity IDE.</p>
+                <p>Opens the updater with Antigravity IDE pre-selected. Pass <code>-y</code> to any command to skip the interactive TUI in automated scripts.</p>
               </div>
             </details>
 

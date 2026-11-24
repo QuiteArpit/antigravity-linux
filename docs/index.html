@@ -498,7 +498,8 @@
             <div class="p-6 font-mono text-sm leading-relaxed overflow-x-auto">
               <div class="flex justify-between mb-4 items-center">
                 <span class="text-teal-400">$ install.sh</span>
-                <button class="copy-btn text-[10px] uppercase font-bold tracking-tighter text-slate-500 hover:text-white transition-colors" data-copy='INSTALLER_URL="https://quitearpit.github.io/antigravity-linux/install.sh"; curl -fsSL "$INSTALLER_URL" | sudo -E env ANTIGRAVITY_LINUX_INSTALLER_URL="$INSTALLER_URL" bash -s -- --all'>Copy</button>
+                <button class="copy-btn text-[10px] uppercase font-bold tracking-tighter text-slate-500 hover:text-white transition-colors" data-copy='INSTALLER_URL="https://quitearpit.github.io/antigravity-linux/install.sh" \
+curl -fsSL "$INSTALLER_URL" | sudo -E env ANTIGRAVITY_LINUX_INSTALLER_URL="$INSTALLER_URL" bash -s -- --all'>Copy</button>
               </div>
               <code class="text-slate-400">
                 <span class="text-slate-500"># Resolving official tarballs...</span><br>
@@ -625,24 +626,14 @@
               >
               <button
                 class="btn-copy"
-                data-copy='INSTALLER_URL="https://quitearpit.github.io/antigravity-linux/install.sh"
+                data-copy='INSTALLER_URL="https://quitearpit.github.io/antigravity-linux/install.sh" \
 curl -fsSL "$INSTALLER_URL" | sudo -E env ANTIGRAVITY_LINUX_INSTALLER_URL="$INSTALLER_URL" bash -s -- --all'
               >
                 Copy
               </button>
             </div>
             <div class="code-content font-mono text-slate-300">
-              <code
-                ><span class="syn-var">INSTALLER_URL</span>=<span
-                  class="syn-str"
-                  >"https://quitearpit.github.io/antigravity-linux/install.sh"</span
-                ><br />
-                curl -fsSL <span class="syn-str">"$INSTALLER_URL"</span> | sudo
-                -E env<br />
-                <span class="syn-var">ANTIGRAVITY_LINUX_INSTALLER_URL</span
-                >=<span class="syn-str">"$INSTALLER_URL"</span> bash -s --
-                <span class="syn-arg">--all</span></code
-              >
+              <code><span class="syn-var">INSTALLER_URL</span>=<span class="syn-str">"https://quitearpit.github.io/antigravity-linux/install.sh"</span> \<br />curl -fsSL <span class="syn-str">"$INSTALLER_URL"</span> | sudo -E env <span class="syn-var">ANTIGRAVITY_LINUX_INSTALLER_URL</span>=<span class="syn-str">"$INSTALLER_URL"</span> bash -s -- <span class="syn-arg">--all</span></code>
             </div>
           </div>
 
@@ -662,18 +653,14 @@ curl -fsSL "$INSTALLER_URL" | sudo -E env ANTIGRAVITY_LINUX_INSTALLER_URL="$INST
                     >
                     <button
                       class="btn-copy text-xs"
-                      data-copy='INSTALLER_URL="https://quitearpit.github.io/antigravity-linux/install.sh"
+                      data-copy='INSTALLER_URL="https://quitearpit.github.io/antigravity-linux/install.sh" \
 curl -fsSL "$INSTALLER_URL" | sudo -E env ANTIGRAVITY_LINUX_INSTALLER_URL="$INSTALLER_URL" bash -s --'
                     >
                       Copy
                     </button>
                   </div>
                   <div class="code-content font-mono text-xs text-slate-300">
-                    <code
-                      ><span class="syn-var">INSTALLER_URL</span>=<span class="syn-str">"https://quitearpit.github.io/antigravity-linux/install.sh"</span><br />
-                      curl -fsSL <span class="syn-str">"$INSTALLER_URL"</span> | sudo -E env<br />
-                      <span class="syn-var">ANTIGRAVITY_LINUX_INSTALLER_URL</span>=<span class="syn-str">"$INSTALLER_URL"</span> bash -s --</code
-                    >
+                    <code><span class="syn-var">INSTALLER_URL</span>=<span class="syn-str">"https://quitearpit.github.io/antigravity-linux/install.sh"</span> \<br />curl -fsSL <span class="syn-str">"$INSTALLER_URL"</span> | sudo -E env <span class="syn-var">ANTIGRAVITY_LINUX_INSTALLER_URL</span>=<span class="syn-str">"$INSTALLER_URL"</span> bash -s --</code>
                   </div>
                 </div>
               </div>
@@ -690,18 +677,14 @@ curl -fsSL "$INSTALLER_URL" | sudo -E env ANTIGRAVITY_LINUX_INSTALLER_URL="$INST
                     <span class="text-xs text-slate-400 font-mono">--ide</span>
                     <button
                       class="btn-copy text-xs"
-                      data-copy='INSTALLER_URL="https://quitearpit.github.io/antigravity-linux/install.sh"
+                      data-copy='INSTALLER_URL="https://quitearpit.github.io/antigravity-linux/install.sh" \
 curl -fsSL "$INSTALLER_URL" | sudo -E env ANTIGRAVITY_LINUX_INSTALLER_URL="$INSTALLER_URL" bash -s -- --ide'
                     >
                       Copy
                     </button>
                   </div>
                   <div class="code-content font-mono text-xs text-slate-300">
-                    <code
-                      ><span class="syn-var">INSTALLER_URL</span>=<span class="syn-str">"https://quitearpit.github.io/antigravity-linux/install.sh"</span><br />
-                      curl -fsSL <span class="syn-str">"$INSTALLER_URL"</span> | sudo -E env<br />
-                      <span class="syn-var">ANTIGRAVITY_LINUX_INSTALLER_URL</span>=<span class="syn-str">"$INSTALLER_URL"</span> bash -s -- <span class="syn-arg">--ide</span></code
-                    >
+                    <code><span class="syn-var">INSTALLER_URL</span>=<span class="syn-str">"https://quitearpit.github.io/antigravity-linux/install.sh"</span> \<br />curl -fsSL <span class="syn-str">"$INSTALLER_URL"</span> | sudo -E env <span class="syn-var">ANTIGRAVITY_LINUX_INSTALLER_URL</span>=<span class="syn-str">"$INSTALLER_URL"</span> bash -s -- <span class="syn-arg">--ide</span></code>
                   </div>
                 </div>
               </div>
@@ -718,18 +701,14 @@ curl -fsSL "$INSTALLER_URL" | sudo -E env ANTIGRAVITY_LINUX_INSTALLER_URL="$INST
                 <span class="text-xs text-slate-400 font-mono">raw.githubusercontent.com</span>
                 <button
                   class="btn-copy"
-                  data-copy='INSTALLER_URL="https://raw.githubusercontent.com/QuiteArpit/antigravity-linux/main/install.sh"
+                  data-copy='INSTALLER_URL="https://raw.githubusercontent.com/QuiteArpit/antigravity-linux/main/install.sh" \
 curl -fsSL "$INSTALLER_URL" | sudo -E env ANTIGRAVITY_LINUX_INSTALLER_URL="$INSTALLER_URL" bash -s -- --all'
                 >
                   Copy
                 </button>
               </div>
               <div class="code-content font-mono text-slate-300 text-sm">
-                <code
-                  ><span class="syn-var">INSTALLER_URL</span>=<span class="syn-str">"https://raw.githubusercontent.com/QuiteArpit/antigravity-linux/main/install.sh"</span><br />
-                  curl -fsSL <span class="syn-str">"$INSTALLER_URL"</span> | sudo -E env<br />
-                  <span class="syn-var">ANTIGRAVITY_LINUX_INSTALLER_URL</span>=<span class="syn-str">"$INSTALLER_URL"</span> bash -s -- <span class="syn-arg">--all</span></code
-                >
+                <code><span class="syn-var">INSTALLER_URL</span>=<span class="syn-str">"https://raw.githubusercontent.com/QuiteArpit/antigravity-linux/main/install.sh"</span> \<br />curl -fsSL <span class="syn-str">"$INSTALLER_URL"</span> | sudo -E env <span class="syn-var">ANTIGRAVITY_LINUX_INSTALLER_URL</span>=<span class="syn-str">"$INSTALLER_URL"</span> bash -s -- <span class="syn-arg">--all</span></code>
               </div>
             </div>
           </div>
@@ -1071,7 +1050,7 @@ sudo bash install.sh --all'
                 <div class="code-block mt-4">
                   <div class="code-header">
                     <span class="text-xs text-slate-400 font-mono">install-all.sh</span>
-                    <button class="btn-copy" data-copy='INSTALLER_URL="https://quitearpit.github.io/antigravity-linux/install.sh"
+                    <button class="btn-copy" data-copy='INSTALLER_URL="https://quitearpit.github.io/antigravity-linux/install.sh" \
 curl -fsSL "$INSTALLER_URL" | sudo -E env ANTIGRAVITY_LINUX_INSTALLER_URL="$INSTALLER_URL" bash -s -- --all'>Copy</button>
                   </div>
                   <div class="code-content font-mono text-slate-300 text-sm">
@@ -1086,7 +1065,7 @@ curl -fsSL "$INSTALLER_URL" | sudo -E env ANTIGRAVITY_LINUX_INSTALLER_URL="$INST
               <div class="faq-body">
                 <p>Use the default installer mode or pass <code>--desktop</code>. This installs only the Antigravity 2.0 desktop app and its launcher.</p>
                 <div class="code-block mt-4">
-                  <div class="code-header"><span class="text-xs text-slate-400 font-mono">desktop-only.sh</span><button class="btn-copy" data-copy='INSTALLER_URL="https://quitearpit.github.io/antigravity-linux/install.sh"
+                  <div class="code-header"><span class="text-xs text-slate-400 font-mono">desktop-only.sh</span><button class="btn-copy" data-copy='INSTALLER_URL="https://quitearpit.github.io/antigravity-linux/install.sh" \
 curl -fsSL "$INSTALLER_URL" | sudo -E env ANTIGRAVITY_LINUX_INSTALLER_URL="$INSTALLER_URL" bash -s -- --desktop'>Copy</button></div>
                   <div class="code-content font-mono text-slate-300 text-sm"><code><span class="syn-var">INSTALLER_URL</span>=<span class="syn-str">"https://quitearpit.github.io/antigravity-linux/install.sh"</span><br />curl -fsSL <span class="syn-str">"$INSTALLER_URL"</span> | sudo -E env <span class="syn-var">ANTIGRAVITY_LINUX_INSTALLER_URL</span>=<span class="syn-str">"$INSTALLER_URL"</span> bash -s -- <span class="syn-arg">--desktop</span></code></div>
                 </div>
@@ -1098,7 +1077,7 @@ curl -fsSL "$INSTALLER_URL" | sudo -E env ANTIGRAVITY_LINUX_INSTALLER_URL="$INST
               <div class="faq-body">
                 <p>Use <code>--ide</code>. This installs the IDE, its command-line launcher, desktop entry, MIME associations, and optional Nautilus integration.</p>
                 <div class="code-block mt-4">
-                  <div class="code-header"><span class="text-xs text-slate-400 font-mono">ide-only.sh</span><button class="btn-copy" data-copy='INSTALLER_URL="https://quitearpit.github.io/antigravity-linux/install.sh"
+                  <div class="code-header"><span class="text-xs text-slate-400 font-mono">ide-only.sh</span><button class="btn-copy" data-copy='INSTALLER_URL="https://quitearpit.github.io/antigravity-linux/install.sh" \
 curl -fsSL "$INSTALLER_URL" | sudo -E env ANTIGRAVITY_LINUX_INSTALLER_URL="$INSTALLER_URL" bash -s -- --ide'>Copy</button></div>
                   <div class="code-content font-mono text-slate-300 text-sm"><code><span class="syn-var">INSTALLER_URL</span>=<span class="syn-str">"https://quitearpit.github.io/antigravity-linux/install.sh"</span><br />curl -fsSL <span class="syn-str">"$INSTALLER_URL"</span> | sudo -E env <span class="syn-var">ANTIGRAVITY_LINUX_INSTALLER_URL</span>=<span class="syn-str">"$INSTALLER_URL"</span> bash -s -- <span class="syn-arg">--ide</span></code></div>
                 </div>
@@ -1110,7 +1089,7 @@ curl -fsSL "$INSTALLER_URL" | sudo -E env ANTIGRAVITY_LINUX_INSTALLER_URL="$INST
               <div class="faq-body">
                 <p>Add <code>--cli</code>. The helper then runs Google's official CLI installer from <code>https://antigravity.google/cli/install.sh</code> for the non-root user when possible.</p>
                 <div class="code-block mt-4">
-                  <div class="code-header"><span class="text-xs text-slate-400 font-mono">with-cli.sh</span><button class="btn-copy" data-copy='INSTALLER_URL="https://quitearpit.github.io/antigravity-linux/install.sh"
+                  <div class="code-header"><span class="text-xs text-slate-400 font-mono">with-cli.sh</span><button class="btn-copy" data-copy='INSTALLER_URL="https://quitearpit.github.io/antigravity-linux/install.sh" \
 curl -fsSL "$INSTALLER_URL" | sudo -E env ANTIGRAVITY_LINUX_INSTALLER_URL="$INSTALLER_URL" bash -s -- --all --cli'>Copy</button></div>
                   <div class="code-content font-mono text-slate-300 text-sm"><code><span class="syn-var">INSTALLER_URL</span>=<span class="syn-str">"https://quitearpit.github.io/antigravity-linux/install.sh"</span><br />curl -fsSL <span class="syn-str">"$INSTALLER_URL"</span> | sudo -E env <span class="syn-var">ANTIGRAVITY_LINUX_INSTALLER_URL</span>=<span class="syn-str">"$INSTALLER_URL"</span> bash -s -- <span class="syn-arg">--all --cli</span></code></div>
                 </div>
@@ -1122,7 +1101,7 @@ curl -fsSL "$INSTALLER_URL" | sudo -E env ANTIGRAVITY_LINUX_INSTALLER_URL="$INST
               <div class="faq-body">
                 <p>Add <code>--no-nautilus</code>. IDE desktop launchers and MIME entries still install, but the GNOME Files/Nautilus right-click helper is skipped.</p>
                 <div class="code-block mt-4">
-                  <div class="code-header"><span class="text-xs text-slate-400 font-mono">no-nautilus.sh</span><button class="btn-copy" data-copy='INSTALLER_URL="https://quitearpit.github.io/antigravity-linux/install.sh"
+                  <div class="code-header"><span class="text-xs text-slate-400 font-mono">no-nautilus.sh</span><button class="btn-copy" data-copy='INSTALLER_URL="https://quitearpit.github.io/antigravity-linux/install.sh" \
 curl -fsSL "$INSTALLER_URL" | sudo -E env ANTIGRAVITY_LINUX_INSTALLER_URL="$INSTALLER_URL" bash -s -- --all --no-nautilus'>Copy</button></div>
                   <div class="code-content font-mono text-slate-300 text-sm"><code><span class="syn-var">INSTALLER_URL</span>=<span class="syn-str">"https://quitearpit.github.io/antigravity-linux/install.sh"</span><br />curl -fsSL <span class="syn-str">"$INSTALLER_URL"</span> | sudo -E env <span class="syn-var">ANTIGRAVITY_LINUX_INSTALLER_URL</span>=<span class="syn-str">"$INSTALLER_URL"</span> bash -s -- <span class="syn-arg">--all --no-nautilus</span></code></div>
                 </div>
@@ -1134,7 +1113,7 @@ curl -fsSL "$INSTALLER_URL" | sudo -E env ANTIGRAVITY_LINUX_INSTALLER_URL="$INST
               <div class="faq-body">
                 <p>Add <code>--no-apt</code>. Use this when dependencies are already installed or when you want to manage packages manually. On non-apt distributions, the helper checks for required tools instead of installing them.</p>
                 <div class="code-block mt-4">
-                  <div class="code-header"><span class="text-xs text-slate-400 font-mono">no-apt.sh</span><button class="btn-copy" data-copy='INSTALLER_URL="https://quitearpit.github.io/antigravity-linux/install.sh"
+                  <div class="code-header"><span class="text-xs text-slate-400 font-mono">no-apt.sh</span><button class="btn-copy" data-copy='INSTALLER_URL="https://quitearpit.github.io/antigravity-linux/install.sh" \
 curl -fsSL "$INSTALLER_URL" | sudo -E env ANTIGRAVITY_LINUX_INSTALLER_URL="$INSTALLER_URL" bash -s -- --all --no-apt'>Copy</button></div>
                   <div class="code-content font-mono text-slate-300 text-sm"><code><span class="syn-var">INSTALLER_URL</span>=<span class="syn-str">"https://quitearpit.github.io/antigravity-linux/install.sh"</span><br />curl -fsSL <span class="syn-str">"$INSTALLER_URL"</span> | sudo -E env <span class="syn-var">ANTIGRAVITY_LINUX_INSTALLER_URL</span>=<span class="syn-str">"$INSTALLER_URL"</span> bash -s -- <span class="syn-arg">--all --no-apt</span></code></div>
                 </div>
@@ -1146,7 +1125,7 @@ curl -fsSL "$INSTALLER_URL" | sudo -E env ANTIGRAVITY_LINUX_INSTALLER_URL="$INST
               <div class="faq-body">
                 <p>Add <code>--force</code>. This reinstalls even when the recorded installed version matches the latest resolved version.</p>
                 <div class="code-block mt-4">
-                  <div class="code-header"><span class="text-xs text-slate-400 font-mono">force-reinstall.sh</span><button class="btn-copy" data-copy='INSTALLER_URL="https://quitearpit.github.io/antigravity-linux/install.sh"
+                  <div class="code-header"><span class="text-xs text-slate-400 font-mono">force-reinstall.sh</span><button class="btn-copy" data-copy='INSTALLER_URL="https://quitearpit.github.io/antigravity-linux/install.sh" \
 curl -fsSL "$INSTALLER_URL" | sudo -E env ANTIGRAVITY_LINUX_INSTALLER_URL="$INSTALLER_URL" bash -s -- --all --force'>Copy</button></div>
                   <div class="code-content font-mono text-slate-300 text-sm"><code><span class="syn-var">INSTALLER_URL</span>=<span class="syn-str">"https://quitearpit.github.io/antigravity-linux/install.sh"</span><br />curl -fsSL <span class="syn-str">"$INSTALLER_URL"</span> | sudo -E env <span class="syn-var">ANTIGRAVITY_LINUX_INSTALLER_URL</span>=<span class="syn-str">"$INSTALLER_URL"</span> bash -s -- <span class="syn-arg">--all --force</span></code></div>
                 </div>

@@ -11,6 +11,7 @@ CLI_INSTALLER="https://antigravity.google/cli/install.sh"
 INSTALL_DESKTOP=1
 INSTALL_IDE=0
 INSTALL_CLI=0
+EXPLICIT_PRODUCT=0
 INSTALL_NAUTILUS=1
 INSTALL_DEPS=1
 DO_UNINSTALL=0
@@ -19,11 +20,81 @@ DO_PRINT_DOWNLOADS=0
 FORCE=0
 YES=0
 INSTALLER_URL="${ANTIGRAVITY_LINUX_INSTALLER_URL:-}"
+IS_TUI_ACTIVE=0
+tmpdir=""
 
-log() { printf '%s\n' "$*"; }
-warn() { printf 'WARN: %s\n' "$*" >&2; }
-err() { printf 'ERROR: %s\n' "$*" >&2; exit 1; }
+cleanup_tui() {
+  if [ "$IS_TUI_ACTIVE" -eq 1 ]; then
+    IS_TUI_ACTIVE=0
+    tput cnorm >&4 2>/dev/null || true
+    tput rmcup >&4 2>/dev/null || true
+    exec 3<&- 2>/dev/null || true
+    exec 4>&- 2>/dev/null || true
+  fi
+}
+
+cleanup_all() {
+  cleanup_tui
+  rm -rf "${tmpdir:-}"
+}
+
+log() {
+  if [ "$IS_TUI_ACTIVE" -eq 1 ]; then
+    printf '   %s\n' "$*" >&4
+  else
+    printf '%s\n' "$*"
+  fi
+}
+
+warn() {
+  if [ "$IS_TUI_ACTIVE" -eq 1 ]; then
+    printf '   \033[1;33mWARN:\033[0m %s\n' "$*" >&4
+  else
+    printf 'WARN: %s\n' "$*" >&2
+  fi
+}
+
+err() {
+  if [ "$IS_TUI_ACTIVE" -eq 1 ]; then
+    printf '   \033[1;31mERROR:\033[0m %s\n' "$*" >&4
+    cleanup_tui
+  else
+    printf 'ERROR: %s\n' "$*" >&2
+  fi
+  exit 1
+}
+
 need() { command -v "$1" >/dev/null 2>&1 || err "Required command not found: $1"; }
+
+download_file() {
+  local url="$1"
+  local dest="$2"
+  if [ "$IS_TUI_ACTIVE" -eq 1 ]; then
+    printf '   ' >&4
+    curl -fL --progress-bar --retry 3 -o "$dest" "$url" 2>&4
+    printf '\n' >&4
+  elif [ -t 1 ]; then
+    curl -fL --progress-bar --retry 3 -o "$dest" "$url"
+  else
+    curl -fsSL --retry 3 -o "$dest" "$url"
+  fi
+}
+
+extract_archive() {
+  local archive="$1"
+  local dest="$2"
+  if [ "$IS_TUI_ACTIVE" -eq 1 ]; then
+    printf '   Extracting archive... ' >&4
+    tar -xzf "$archive" -C "$dest" --checkpoint=500 --checkpoint-action='echo -ne "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\bExtracting... [%u files]"' >&4 2>&4
+    printf '\r\033[K   Extracting archive: Done.\n' >&4
+  elif [ -t 1 ]; then
+    printf 'Extracting archive... '
+    tar -xzf "$archive" -C "$dest" --checkpoint=500 --checkpoint-action='echo -ne "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\bExtracting... [%u files]"'
+    printf '\r\033[KExtracting archive: Done.\n'
+  else
+    tar -xzf "$archive" -C "$dest"
+  fi
+}
 
 usage() {
   cat <<'USAGE'
@@ -65,10 +136,10 @@ USAGE
 while [ $# -gt 0 ]; do
   case "$1" in
     install|update) ;;
-    --desktop) INSTALL_DESKTOP=1; INSTALL_IDE=0 ;;
-    --ide) INSTALL_DESKTOP=0; INSTALL_IDE=1 ;;
-    --all) INSTALL_DESKTOP=1; INSTALL_IDE=1 ;;
-    --cli) INSTALL_CLI=1 ;;
+    --desktop) INSTALL_DESKTOP=1; INSTALL_IDE=0; EXPLICIT_PRODUCT=1 ;;
+    --ide) INSTALL_DESKTOP=0; INSTALL_IDE=1; EXPLICIT_PRODUCT=1 ;;
+    --all) INSTALL_DESKTOP=1; INSTALL_IDE=1; EXPLICIT_PRODUCT=1 ;;
+    --cli) INSTALL_CLI=1; EXPLICIT_PRODUCT=1 ;;
     --no-nautilus) INSTALL_NAUTILUS=0 ;;
     --no-apt) INSTALL_DEPS=0 ;;
     --force) FORCE=1 ;;
@@ -122,8 +193,14 @@ install_deps() {
     done
     if [ ${#missing[@]} -gt 0 ]; then
       export DEBIAN_FRONTEND=noninteractive
-      apt-get update
-      apt-get install -y "${missing[@]}"
+      log "Installing missing package dependencies: ${missing[*]}..."
+      if [ "$IS_TUI_ACTIVE" -eq 1 ]; then
+        apt-get update >&4 2>&4
+        apt-get install -y "${missing[@]}" >&4 2>&4
+      else
+        apt-get update
+        apt-get install -y "${missing[@]}"
+      fi
     fi
   elif command -v dnf >/dev/null 2>&1; then
     local packages=(ca-certificates curl tar python3 desktop-file-utils xdg-utils)
@@ -137,7 +214,12 @@ install_deps() {
       fi
     done
     if [ ${#missing[@]} -gt 0 ]; then
-      dnf install -y "${missing[@]}"
+      log "Installing missing package dependencies: ${missing[*]}..."
+      if [ "$IS_TUI_ACTIVE" -eq 1 ]; then
+        dnf install -y "${missing[@]}" >&4 2>&4
+      else
+        dnf install -y "${missing[@]}"
+      fi
     fi
   else
     for c in curl tar python3; do need "$c"; done
@@ -320,12 +402,12 @@ install_desktop_app() {
 
   log "Downloading Antigravity 2.0 $version for $AG_PLATFORM from Google..."
   local archive="$tmpdir/Antigravity.tar.gz"
-  curl -fsSL --retry 3 -o "$archive" "$url"
+  download_file "$url" "$archive"
   tar -tzf "$archive" > "$tmpdir/desktop-list.txt"
   local top_dir
   top_dir=$(sed -n '1{s#/.*##;p;q}' "$tmpdir/desktop-list.txt")
   [ "$top_dir" = "$DESKTOP_TOP" ] || err "Unexpected Antigravity archive layout: $top_dir"
-  tar -xzf "$archive" -C "$tmpdir"
+  extract_archive "$archive" "$tmpdir"
   [ -x "$tmpdir/$top_dir/antigravity" ] || err "Antigravity launcher not found inside tarball."
 
   local icon_staged="$tmpdir/antigravity.png"
@@ -377,12 +459,12 @@ install_ide_app() {
 
   log "Downloading Antigravity IDE $version for $AG_PLATFORM from Google..."
   local archive="$tmpdir/Antigravity-IDE.tar.gz"
-  curl -fsSL --retry 3 -o "$archive" "$url"
+  download_file "$url" "$archive"
   tar -tzf "$archive" > "$tmpdir/ide-list.txt"
   local top_dir
   top_dir=$(sed -n '1{s#/.*##;p;q}' "$tmpdir/ide-list.txt")
   [ "$top_dir" = "Antigravity IDE" ] || err "Unexpected Antigravity IDE archive layout: $top_dir"
-  tar -xzf "$archive" -C "$tmpdir"
+  extract_archive "$archive" "$tmpdir"
   [ -x "$tmpdir/$top_dir/antigravity-ide" ] || err "Antigravity IDE launcher not found inside tarball."
 
   rm -rf "${root}.new"
@@ -559,6 +641,9 @@ print_success_summary() {
   if [ "$INSTALL_IDE" -eq 1 ]; then
     log "- Antigravity IDE: /usr/local/bin/antigravity-ide"
   fi
+  if [ "$INSTALL_CLI" -eq 1 ]; then
+    log "- Antigravity CLI: ~/.local/bin/agy"
+  fi
   log ""
   log "Manage:"
   log "- Status:    antigravity-linux --status"
@@ -568,10 +653,179 @@ print_success_summary() {
     log ""
     log "Note: antigravity-linux was installed without a stored URL. Re-run this local script for updates or reinstall from a published URL."
   fi
-  if [ "$INSTALL_IDE" -eq 1 ]; then
+  if [ "$INSTALL_IDE" -eq 1 ] && [ "$INSTALL_NAUTILUS" -eq 1 ]; then
     log ""
     log "Folder open integration: use your file manager's Open With menu, or Nautilus context menu after restarting Files."
   fi
+}
+
+start_tui() {
+  local tty_in="/dev/tty"
+  if [ ! -r "$tty_in" ] || [ ! -w "$tty_in" ]; then
+    return 1
+  fi
+  exec 3<"$tty_in"
+  exec 4>"$tty_in"
+  IS_TUI_ACTIVE=1
+  tput smcup >&4 2>/dev/null || true
+  tput civis >&4 2>/dev/null || true
+  return 0
+}
+
+run_stepper_wizard() {
+  local has_nautilus=0
+  if command -v nautilus >/dev/null 2>&1; then
+    has_nautilus=1
+  fi
+
+  local opt_desktop=1
+  local opt_ide=1
+  local opt_cli=0
+  local opt_nautilus=$has_nautilus
+  local cursor=0
+  local total_opts=3
+  [ $has_nautilus -eq 1 ] && total_opts=4
+
+  render_wizard() {
+    clear >&4
+    # Spacing from the top
+    printf '\n\n' >&4
+    printf '\033[1;36m' >&4
+    cat >&4 <<'BANNER'
+    █████╗ ███╗   ██╗████████╗██╗ ██████╗ ██████╗  █████╗ ██╗   ██╗██╗████████╗██╗   ██╗
+   ██╔══██╗████╗  ██║╚══██╔══╝██║██╔════╝ ██╔══██╗██╔══██╗██║   ██║██║╚══██╔══╝╚██╗ ██╔╝
+   ███████║██╔██╗ ██║   ██║   ██║██║  ███╗██████╔╝███████║██║   ██║██║   ██║    ╚████╔╝ 
+   ██╔══██║██║╚██╗██║   ██║   ██║██║   ██║██╔══██╗██╔══██║╚██╗ ██╔╝██║   ██║     ╚██╔╝  
+   ██║  ██║██║ ╚████║   ██║   ██║╚██████╔╝██║  ██║██║  ██║ ╚████╔╝ ██║   ██║      ██║   
+   ╚═╝  ╚═╝╚═╝  ╚═══╝   ╚═╝   ╚═╝ ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝  ╚═══╝  ╚═╝   ╚═╝      ╚═╝    
+
+                    ██╗     ██╗███╗   ██╗██╗   ██╗██╗  ██╗
+                    ██║     ██║████╗  ██║██║   ██║╚██╗██╔╝
+                    ██║     ██║██╔██╗ ██║██║   ██║ ╚███╔╝ 
+                    ██║     ██║██║╚██╗██║██║   ██║ ██╔██╗ 
+                    ███████╗██║██║ ╚████║╚██████╔╝██╔╝ ██╗
+                    ╚══════╝╚═╝╚═╝  ╚═══╝ ╚═════╝ ╚═╝  ╚═╝
+BANNER
+    printf '\033[0m' >&4
+    printf '\n\033[1;37m   Interactive Installer (Linux %s)\033[0m\n' "$AG_PLATFORM" >&4
+    printf '\033[90m   ─────────────────────────────────────────────────────────────────────────────\033[0m\n\n' >&4
+
+    printf '   \033[1;32m[✓] 1. Architecture & Pre-flight\033[0m   (Target: %s, UID: %s)\n' "$AG_PLATFORM" "$(id -u)" >&4
+    printf '   \033[1;36m[●] 2. Component Selection\033[0m         Choose packages and desktop features\n' >&4
+    printf '   \033[90m[ ] 3. Download & Deploy\033[0m           Official Google release tarballs\n\n' >&4
+
+    printf '   \033[1;37mSelect components to install:\033[0m\n\n' >&4
+
+    local c0=" " c1=" " c2=" " c3=" "
+    [ $cursor -eq 0 ] && c0="\033[1;36m❯\033[0m"
+    [ $cursor -eq 1 ] && c1="\033[1;36m❯\033[0m"
+    [ $cursor -eq 2 ] && c2="\033[1;36m❯\033[0m"
+    [ $cursor -eq 3 ] && c3="\033[1;36m❯\033[0m"
+
+    local d0="[ ]" d1="[ ]" d2="[ ]" d3="[ ]"
+    [ $opt_desktop -eq 1 ] && d0="\033[1;32m[✓]\033[0m"
+    [ $opt_ide -eq 1 ] && d1="\033[1;32m[✓]\033[0m"
+    [ $opt_cli -eq 1 ] && d2="\033[1;32m[✓]\033[0m"
+    [ $opt_nautilus -eq 1 ] && d3="\033[1;32m[✓]\033[0m"
+
+    printf '   %b %b Antigravity 2.0 Desktop     \033[90m(Google autonomous agent platform)\033[0m\n' "$c0" "$d0" >&4
+    printf '   %b %b Antigravity IDE             \033[90m(Antigravity Code development studio)\033[0m\n' "$c1" "$d1" >&4
+    printf '   %b %b Antigravity CLI             \033[90m(Official agy terminal command)\033[0m\n' "$c2" "$d2" >&4
+
+    if [ $has_nautilus -eq 1 ]; then
+      printf '   %b %b Nautilus Context Menu       \033[90m(Right-click "Open in Antigravity IDE")\033[0m\n\n' "$c3" "$d3" >&4
+    else
+      printf '     \033[90m[—] Nautilus Context Menu       (Disabled: Nautilus not detected on system)\033[0m\n\n' >&4
+    fi
+
+    printf '\033[90m   ─────────────────────────────────────────────────────────────────────────────\033[0m\n' >&4
+    printf '   \033[1;33mControls:\033[0m [↑/↓] Navigate  •  [Space] Toggle  •  [Enter] Proceed  •  [q] Quit\n' >&4
+  }
+
+  while true; do
+    render_wizard
+    IFS= read -rsn1 -u 3 key || true
+    if [ "$key" = $'\x1b' ]; then
+      read -rsn2 -u 3 -t 0.1 rest || true
+      key+="$rest"
+    fi
+
+    case "$key" in
+      $'\x1b[A'|k|K) # Up
+        cursor=$(( (cursor - 1 + total_opts) % total_opts ))
+        ;;
+      $'\x1b[B'|j|J) # Down
+        cursor=$(( (cursor + 1) % total_opts ))
+        ;;
+      " ") # Space (toggle)
+        case $cursor in
+          0) opt_desktop=$(( 1 - opt_desktop )) ;;
+          1) opt_ide=$(( 1 - opt_ide )) ;;
+          2) opt_cli=$(( 1 - opt_cli )) ;;
+          3)
+            if [ $has_nautilus -eq 1 ]; then
+              opt_nautilus=$(( 1 - opt_nautilus ))
+            fi
+            ;;
+        esac
+        ;;
+      "") # Enter (confirm)
+        if [ $opt_desktop -eq 0 ] && [ $opt_ide -eq 0 ] && [ $opt_cli -eq 0 ]; then
+          continue
+        fi
+        break
+        ;;
+      q|Q|$'\x03') # Quit
+        cleanup_tui
+        printf '\nInstallation aborted by user.\n'
+        exit 0
+        ;;
+    esac
+  done
+
+  INSTALL_DESKTOP=$opt_desktop
+  INSTALL_IDE=$opt_ide
+  INSTALL_CLI=$opt_cli
+  INSTALL_NAUTILUS=$opt_nautilus
+}
+
+render_step3_header() {
+  clear >&4
+  printf '\n\n' >&4
+  printf '\033[1;36m' >&4
+  cat >&4 <<'BANNER'
+    █████╗ ███╗   ██╗████████╗██╗ ██████╗ ██████╗  █████╗ ██╗   ██╗██╗████████╗██╗   ██╗
+   ██╔══██╗████╗  ██║╚══██╔══╝██║██╔════╝ ██╔══██╗██╔══██╗██║   ██║██║╚══██╔══╝╚██╗ ██╔╝
+   ███████║██╔██╗ ██║   ██║   ██║██║  ███╗██████╔╝███████║██║   ██║██║   ██║    ╚████╔╝ 
+   ██╔══██║██║╚██╗██║   ██║   ██║██║   ██║██╔══██╗██╔══██║╚██╗ ██╔╝██║   ██║     ╚██╔╝  
+   ██║  ██║██║ ╚████║   ██║   ██║╚██████╔╝██║  ██║██║  ██║ ╚████╔╝ ██║   ██║      ██║   
+   ╚═╝  ╚═╝╚═╝  ╚═══╝   ╚═╝   ╚═╝ ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝  ╚═══╝  ╚═╝   ╚═╝      ╚═╝    
+
+                    ██╗     ██╗███╗   ██╗██╗   ██╗██╗  ██╗
+                    ██║     ██║████╗  ██║██║   ██║╚██╗██╔╝
+                    ██║     ██║██╔██╗ ██║██║   ██║ ╚███╔╝ 
+                    ██║     ██║██║╚██╗██║██║   ██║ ██╔██╗ 
+                    ███████╗██║██║ ╚████║╚██████╔╝██╔╝ ██╗
+                    ╚══════╝╚═╝╚═╝  ╚═══╝ ╚═════╝ ╚═╝  ╚═╝
+BANNER
+  printf '\033[0m' >&4
+  printf '\n\033[1;37m   Interactive Installer (Linux %s)\033[0m\n' "$AG_PLATFORM" >&4
+  printf '\033[90m   ─────────────────────────────────────────────────────────────────────────────\033[0m\n\n' >&4
+
+  printf '   \033[1;32m[✓] 1. Architecture & Pre-flight\033[0m   (Target: %s, UID: %s)\n' "$AG_PLATFORM" "$(id -u)" >&4
+
+  local sel=()
+  [ "$INSTALL_DESKTOP" -eq 1 ] && sel+=("Desktop")
+  [ "$INSTALL_IDE" -eq 1 ] && sel+=("IDE")
+  [ "$INSTALL_CLI" -eq 1 ] && sel+=("CLI")
+  [ "$INSTALL_NAUTILUS" -eq 1 ] && sel+=("Nautilus")
+  local sel_summary
+  sel_summary=$(IFS=', '; echo "${sel[*]}")
+
+  printf '   \033[1;32m[✓] 2. Component Selection\033[0m         (Selected: %s)\n' "$sel_summary" >&4
+  printf '   \033[1;36m[●] 3. Download & Deploy\033[0m           Installing selected components...\n\n' >&4
+  printf '\033[90m   ─────────────────────────────────────────────────────────────────────────────\033[0m\n\n' >&4
+  tput cnorm >&4 2>/dev/null || true
 }
 
 uninstall_all() {
@@ -600,12 +854,25 @@ main() {
   fi
 
   require_root_or_reexec
-  install_deps
+
+  local is_interactive=0
+  if [ "$EXPLICIT_PRODUCT" -eq 0 ] && [ "$YES" -eq 0 ] && [ -t 1 ] && [ -r /dev/tty ] && [ -w /dev/tty ]; then
+    is_interactive=1
+  fi
+
+  if [ "$is_interactive" -eq 1 ]; then
+    if start_tui; then
+      run_stepper_wizard
+      render_step3_header
+    fi
+  fi
+
   local tmp_parent="${TMPDIR:-/var/tmp}"
   mkdir -p "$tmp_parent"
-  local tmpdir
   tmpdir=$(mktemp -d "$tmp_parent/$PROJECT_NAME.XXXXXX")
-  trap 'rm -rf "${tmpdir:-}"' EXIT
+  trap cleanup_all EXIT INT TERM
+
+  install_deps
   local js
   js=$(resolve_download_source "$tmpdir")
   [ "$INSTALL_DESKTOP" -eq 1 ] && install_desktop_app "$tmpdir" "$js"
@@ -614,13 +881,34 @@ main() {
   if [ "$INSTALL_CLI" -eq 1 ]; then
     log "Running Google's official Antigravity CLI installer for the non-root user..."
     if [ -n "${SUDO_USER:-}" ] && [ "${SUDO_USER:-}" != "root" ]; then
-      sudo -u "$SUDO_USER" -H bash -lc "curl -fsSL '$CLI_INSTALLER' | bash"
+      if [ "$IS_TUI_ACTIVE" -eq 1 ]; then
+        sudo -u "$SUDO_USER" -H bash -lc "curl -fsSL '$CLI_INSTALLER' | bash" >&4 2>&4
+      else
+        sudo -u "$SUDO_USER" -H bash -lc "curl -fsSL '$CLI_INSTALLER' | bash"
+      fi
     else
-      curl -fsSL "$CLI_INSTALLER" | bash
+      if [ "$IS_TUI_ACTIVE" -eq 1 ]; then
+        curl -fsSL "$CLI_INSTALLER" | bash >&4 2>&4
+      else
+        curl -fsSL "$CLI_INSTALLER" | bash
+      fi
     fi
   fi
   install_manager_command
-  print_success_summary
+
+  if [ "$IS_TUI_ACTIVE" -eq 1 ]; then
+    printf '\n\033[90m   ─────────────────────────────────────────────────────────────────────────────\033[0m\n' >&4
+    printf '   \033[1;32m[✓] 3. Download & Deploy\033[0m           Complete!\n' >&4
+    print_success_summary
+    printf '\n\033[90m   ─────────────────────────────────────────────────────────────────────────────\033[0m\n' >&4
+    printf '   \033[1;33mPress any key to exit...\033[0m ' >&4
+    read -rsn1 -u 3 _discard || true
+    printf '\n' >&4
+    cleanup_tui
+    print_success_summary
+  else
+    print_success_summary
+  fi
 }
 
 main "$@"

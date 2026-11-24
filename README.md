@@ -18,122 +18,130 @@
 
 > **This is a community helper. Not affiliated with, endorsed by, or supported by Google.**
 
-One-command Linux installer/updater for **Google Antigravity 2.0** and **Antigravity IDE** using Google's official tarball downloads.
+One-command Linux installer and updater for **Google Antigravity 2.0**, **Antigravity IDE**, and the official **Antigravity CLI (`agy`)** using Google's official release tarballs and scripts.
 
-This project does **not** mirror, modify, or redistribute Google Antigravity. The installer resolves the latest official Google tarball from [https://antigravity.google/download](https://antigravity.google/download) at install/update time, then adds Linux desktop integration around it.
+This project does **not** mirror, modify, or redistribute Google Antigravity. The installer dynamically resolves the latest official Google downloads from [https://antigravity.google/download](https://antigravity.google/download) at install/update time, integrates them cleanly into your desktop environment, and manages updates with a full-screen interactive TUI.
 
 
 ## Features
 
-- Installs the latest official Antigravity 2.0 Linux tarball.
-- Optionally installs Antigravity IDE.
-- Supports x86_64 and ARM64 Linux builds when Google provides them.
-- Installs app menu launchers.
-- Installs icons when available from the tarball.
-- Adds command-line launchers:
-  - `antigravity`
-  - `antigravity-ide`
-- Adds update helper:
-  - `sudo antigravity-linux update --all`
-- Adds folder opening integration for IDE:
-  - file manager `Open With` support through `.desktop` MIME entries
-  - optional GNOME Files/Nautilus right-click menu helper
-- Preserves the Electron/Chromium sandbox permission model instead of launching with `--no-sandbox` by default.
+- **Interactive TUI Installer & Updater:**
+  - Full-screen terminal wizard with ASCII branding and a 3-step progress stepper.
+  - **Live Version Comparison:** Queries Google releases in real-time and compares with locally installed versions (`(v2.35.0 installed • Up to date)` or `(v2.34.0 installed ➜ v2.35.0 update available)`).
+  - **In-TUI Live Progress:** Live download progress bars (`curl --progress-bar`) and file extraction counters streamed inside the TUI.
+  - **Force Reinstall Toggle:** Re-download and overwrite existing installations directly from the interactive menu without needing CLI flags.
+  - Completion summary with a `"Press any key to exit"` prompt that cleanly restores your terminal.
+- **Official Google Downloads:** Resolves official tarballs dynamically at runtime with zero third-party repackaging.
+- **Comprehensive Component Management:**
+  - **Antigravity 2.0 Desktop:** Autonomous AI agent application.
+  - **Antigravity IDE:** Code development studio.
+  - **Antigravity CLI (`agy`):** Installs and updates Google's official CLI command, dropping root privileges to user space (`~/.local/bin/agy`).
+  - **Nautilus Context Menu:** Optional GNOME Files right-click menu integration (auto-disabled on systems without Nautilus, such as Fedora KDE).
+- **Multi-Distro Support:** Native automatic dependency resolution for Debian/Ubuntu (`apt-get`) and Fedora/RHEL (`dnf`).
+- **Offline-First Script Caching:**
+  - Automatically caches the installer locally at `/etc/antigravity-linux/install.sh`.
+  - Auto-checks for new installer versions on GitHub Pages with syntax validation (`bash -n`).
+  - Falls back gracefully to the locally cached installer if network is offline or remote is unreachable.
+- **Desktop & Launcher Integration:**
+  - High-resolution application icons extracted directly from tarball ASAR bundles.
+  - Desktop entries (`.desktop`) with proper MIME associations and window classes.
+  - System-wide command-line launchers: `antigravity`, `antigravity-ide`, `antigravity-linux`.
+- **Security:** Preserves Electron/Chromium sandbox setuid permissions (`4755`) instead of running with `--no-sandbox`.
 
 ## Minimum Requirements
-> `glibc >= 2.28, glibcxx >= 3.4.25 (e.g. Ubuntu 20. Debian 10, Fedora 36, RHEL 8)`
+> `glibc >= 2.28, glibcxx >= 3.4.25 (e.g. Ubuntu 20+, Debian 10+, Fedora 36+, RHEL 8+)`
 
-## Quick install from GitHub Pages
+## Interactive Setup (Recommended)
 
-Install Antigravity 2.0 and the IDE:
-
-```bash
-INSTALLER_URL="https://quitearpit.github.io/antigravity-linux/install.sh"
-curl -fsSL "$INSTALLER_URL" | sudo -E env ANTIGRAVITY_LINUX_INSTALLER_URL="$INSTALLER_URL" bash -s -- --all
-```
-
-Install only Antigravity 2.0 desktop app:
+Run the one-liner to launch the interactive TUI installer:
 
 ```bash
 INSTALLER_URL="https://quitearpit.github.io/antigravity-linux/install.sh"
-curl -fsSL "$INSTALLER_URL" | sudo -E env ANTIGRAVITY_LINUX_INSTALLER_URL="$INSTALLER_URL" bash -s --
+curl -fsSL "$INSTALLER_URL" | sudo -E env ANTIGRAVITY_LINUX_INSTALLER_URL="$INSTALLER_URL" bash
 ```
 
-Install only Antigravity IDE:
+Use the interactive wizard to select components, toggle Force Reinstall, and observe real-time download and extraction progress.
+
+## Non-Interactive & Headless Installs
+
+Append `-y` (or specific flags) to run non-interactively in automated scripts or CI/CD pipelines:
+
+Install Desktop app and IDE:
 
 ```bash
 INSTALLER_URL="https://quitearpit.github.io/antigravity-linux/install.sh"
-curl -fsSL "$INSTALLER_URL" | sudo -E env ANTIGRAVITY_LINUX_INSTALLER_URL="$INSTALLER_URL" bash -s -- --ide
+curl -fsSL "$INSTALLER_URL" | sudo -E env ANTIGRAVITY_LINUX_INSTALLER_URL="$INSTALLER_URL" bash -s -- --all -y
 ```
 
-## Quick install from raw GitHub
+Install Antigravity 2.0 Desktop only:
 
 ```bash
-INSTALLER_URL="https://raw.githubusercontent.com/QuiteArpit/antigravity-linux/main/install.sh"
-curl -fsSL "$INSTALLER_URL" | sudo -E env ANTIGRAVITY_LINUX_INSTALLER_URL="$INSTALLER_URL" bash -s -- --all
+INSTALLER_URL="https://quitearpit.github.io/antigravity-linux/install.sh"
+curl -fsSL "$INSTALLER_URL" | sudo -E env ANTIGRAVITY_LINUX_INSTALLER_URL="$INSTALLER_URL" bash -s -- --desktop -y
 ```
 
-## Update
-
-Once installed from a published URL:
+Install Antigravity IDE only:
 
 ```bash
-sudo antigravity-linux update --all
+INSTALLER_URL="https://quitearpit.github.io/antigravity-linux/install.sh"
+curl -fsSL "$INSTALLER_URL" | sudo -E env ANTIGRAVITY_LINUX_INSTALLER_URL="$INSTALLER_URL" bash -s -- --ide -y
 ```
 
-Desktop app only:
+## Update & Maintenance
 
-```bash
-sudo update-antigravity
-```
+Once installed, use the helper commands anytime:
 
-IDE only:
+- **Launch Interactive Updater (TUI):**
+  ```bash
+  sudo antigravity-linux
+  ```
+  *(Or `sudo antigravity-linux update --all`)*
 
-```bash
-sudo update-antigravity-ide
-```
+- **Update Desktop App (Pre-selected in TUI):**
+  ```bash
+  sudo update-antigravity
+  ```
+
+- **Update IDE (Pre-selected in TUI):**
+  ```bash
+  sudo update-antigravity-ide
+  ```
+
+- **Silent / Automated Updates:**
+  Pass `-y` to skip the TUI:
+  ```bash
+  sudo antigravity-linux update --all -y
+  ```
 
 ## Status
 
-When installed from a published URL:
+Check installed versions, paths, and update helper status:
 
 ```bash
 antigravity-linux --status
 ```
 
-For local-checkout installs without a stored installer URL, use the local script:
-
-```bash
-bash install.sh --status
-```
-
 ## Uninstall
 
-When installed from a published URL:
+Remove helper-managed binaries, desktop entries, icons, and local cached installer:
 
 ```bash
 sudo antigravity-linux --uninstall
 ```
 
-For local-checkout installs without a stored installer URL, use the local script:
-
-```bash
-sudo bash install.sh --uninstall
-```
-
-The uninstall removes helper-managed files from `/opt`, `/usr/local/bin`, `/usr/share/applications`, `/usr/share/icons`, and the Nautilus extension path. It does not delete user settings in home directories.
+*(User settings, configs, and projects in home directories are left completely untouched.)*
 
 ## Options
 
 ```text
---desktop          Install/update Antigravity 2.0 desktop app only
---ide              Install/update Antigravity IDE only
---all              Install/update desktop app + IDE
---cli              Also run Google's official Antigravity CLI installer
+--desktop          Install or update Antigravity 2.0 desktop app
+--ide              Install or update Antigravity IDE
+--all              Install or update both Desktop app and IDE
+--cli              Run Google's official Antigravity CLI installer/updater
 --no-nautilus      Skip GNOME Files/Nautilus context-menu helper
---no-apt           Do not install apt dependencies automatically
+--no-apt           Skip automatic dependency installation
 --force            Reinstall even when the recorded version matches
---install-url URL  Store URL used by the antigravity-linux update command
+--install-url URL  Store the custom update helper URL
 --status           Show installed helper-managed apps and versions
 --print-downloads  Print resolved official Google tarball URLs
 --uninstall        Remove helper-managed installation
@@ -146,11 +154,14 @@ The uninstall removes helper-managed files from `/opt`, `/usr/local/bin`, `/usr/
 |---|---|
 | Antigravity 2.0 | `/opt/antigravity` |
 | Antigravity IDE | `/opt/antigravity-ide` |
-| CLI launchers | `/usr/local/bin/antigravity`, `/usr/local/bin/antigravity-ide` |
-| Update helper | `/usr/local/bin/antigravity-linux` |
-| App launchers | `/usr/share/applications/antigravity*.desktop` |
-| Icons | `/usr/share/icons/hicolor/512x512/apps/` |
-| Nautilus extension | `/usr/share/nautilus-python/extensions/open-in-antigravity-ide.py` |
+| Antigravity CLI | `~/.local/bin/agy` |
+| System Launchers | `/usr/local/bin/antigravity`, `/usr/local/bin/antigravity-ide` |
+| Update Manager | `/usr/local/bin/antigravity-linux` |
+| Helper Commands | `/usr/local/bin/update-antigravity`, `/usr/local/bin/update-antigravity-ide` |
+| Cached Installer | `/etc/antigravity-linux/install.sh` |
+| Desktop Entries | `/usr/share/applications/antigravity*.desktop` |
+| High-Res Icons | `/usr/share/icons/hicolor/512x512/apps/` |
+| Nautilus Helper | `/usr/share/nautilus-python/extensions/open-in-antigravity-ide.py` |
 
 ## Supported systems
 

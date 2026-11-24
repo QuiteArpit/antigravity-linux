@@ -188,7 +188,7 @@ install_deps() {
     fi
     local missing=()
     for pkg in "${packages[@]}"; do
-      if ! dpkg -s "$pkg" >/dev/null 2>&1; then
+      if ! dpkg -s "$pkg" 2>/dev/null | grep -q 'install ok installed'; then
         missing+=("$pkg")
       fi
     done
@@ -236,7 +236,7 @@ resolve_download_source() {
   # Google's download page may embed tarball URLs directly in the HTML
   # (current Astro-based layout) or inside a separate JS bundle (older layout).
   # Try the HTML first; fall back to downloading a JS bundle if needed.
-  if grep -qP 'https?://[^"'\''<>\s)]+/linux-(x64|arm)/[^"'\''<>\s)]+\.tar\.gz' "$html"; then
+  if grep -qP 'https?:(?://|\\/\\/)[^"'\''<>\s)]+(?:/|\\/)linux-(x64|arm)(?:/|\\/)[^"'\''<>\s)]+\.tar\.gz' "$html"; then
     cp "$html" "$js"
     printf '%s\n' "$js"
     return 0
@@ -261,7 +261,7 @@ PY
   curl -fsSL --compressed --retry 3 -o "$js" "$main_js_url"
 
   # If this JS bundle has no tarball URLs, fall back to searching the HTML.
-  if ! grep -qP 'https?://[^"'\''<>\s)]+/linux-(x64|arm)/[^"'\''<>\s)]+\.tar\.gz' "$js"; then
+  if ! grep -qP 'https?:(?://|\\/\\/)[^"'\''<>\s)]+(?:/|\\/)linux-(x64|arm)(?:/|\\/)[^"'\''<>\s)]+\.tar\.gz' "$js"; then
     cp "$html" "$js"
   fi
 

@@ -1124,7 +1124,7 @@ curl -fsSL "$INSTALLER_URL" | sudo -E env ANTIGRAVITY_LINUX_INSTALLER_URL="$INST
             <details class="faq-item" id="faq-no-apt">
               <summary><span>How do I prevent automatic apt installs?</span><a class="faq-link" href="#faq-no-apt" aria-label="Link to this FAQ">#</a></summary>
               <div class="faq-body">
-                <p>Add <code>--no-apt</code>. Use this when dependencies are already installed or when you want to manage packages manually. On non-apt distributions, the helper checks for required tools instead of installing them.</p>
+                <p>Add <code>--no-apt</code>. Use this when dependencies are already installed or when you want to manage packages manually. With <code>--no-apt</code>, the installer skips the package step; otherwise, it installs missing packages using <code>apt-get</code> or <code>dnf</code> when available, and only systems with neither package manager check for required tools.</p>
                 <div class="code-block mt-4">
                   <div class="code-header"><span class="text-xs text-slate-400 font-mono">no-apt.sh</span><button class="btn-copy" data-copy='INSTALLER_URL="https://quitearpit.github.io/antigravity-linux/install.sh" \
 curl -fsSL "$INSTALLER_URL" | sudo -E env ANTIGRAVITY_LINUX_INSTALLER_URL="$INSTALLER_URL" bash -s -- --all --no-apt'>Copy</button></div>

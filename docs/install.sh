@@ -19,7 +19,8 @@ DO_STATUS=0
 DO_PRINT_DOWNLOADS=0
 FORCE=0
 YES=0
-INSTALLER_URL="${ANTIGRAVITY_LINUX_INSTALLER_URL:-}"
+DEFAULT_INSTALLER_URL="https://quitearpit.github.io/antigravity-linux/install.sh"
+INSTALLER_URL="${ANTIGRAVITY_LINUX_INSTALLER_URL:-$DEFAULT_INSTALLER_URL}"
 IS_TUI_ACTIVE=0
 tmpdir=""
 
@@ -395,12 +396,24 @@ install_desktop_app() {
   local root="/opt/antigravity"
   local target="$root/$DESKTOP_TOP/antigravity"
   local version_file="$root/.antigravity-linux-version"
-  if [ "$FORCE" -eq 0 ] && [ -x "$target" ] && [ "$(installed_version "$version_file")" = "$version" ]; then
-    log "Antigravity 2.0 $version is already installed."
+  local current_ver
+  current_ver=$(installed_version "$version_file")
+
+  if [ "$FORCE" -eq 0 ] && [ -x "$target" ] && [ "$current_ver" = "$version" ]; then
+    log "Antigravity 2.0 ($version) is already up to date."
     return
   fi
 
-  log "Downloading Antigravity 2.0 $version for $AG_PLATFORM from Google..."
+  if [ -x "$target" ] && [ -n "$current_ver" ]; then
+    if [ "$current_ver" != "$version" ]; then
+      log "Updating Antigravity 2.0 from $current_ver to $version for $AG_PLATFORM from Google..."
+    else
+      log "Reinstalling Antigravity 2.0 $version for $AG_PLATFORM (--force)..."
+    fi
+  else
+    log "Downloading Antigravity 2.0 $version for $AG_PLATFORM from Google..."
+  fi
+
   local archive="$tmpdir/Antigravity.tar.gz"
   download_file "$url" "$archive"
   tar -tzf "$archive" > "$tmpdir/desktop-list.txt"
@@ -441,7 +454,7 @@ StartupNotify=true
 StartupWMClass=Antigravity
 DESKTOP
   refresh_desktop_caches
-  log "Installed Antigravity 2.0 $version at $root/$top_dir"
+  log "Deployed Antigravity 2.0 $version at $root/$top_dir"
 }
 
 install_ide_app() {
@@ -452,12 +465,24 @@ install_ide_app() {
   local root="/opt/antigravity-ide"
   local install_dir="Antigravity-IDE"
   local version_file="$root/.antigravity-linux-version"
-  if [ "$FORCE" -eq 0 ] && [ -x "$root/$install_dir/antigravity-ide" ] && [ "$(installed_version "$version_file")" = "$version" ]; then
-    log "Antigravity IDE $version is already installed."
+  local current_ver
+  current_ver=$(installed_version "$version_file")
+
+  if [ "$FORCE" -eq 0 ] && [ -x "$root/$install_dir/antigravity-ide" ] && [ "$current_ver" = "$version" ]; then
+    log "Antigravity IDE ($version) is already up to date."
     return
   fi
 
-  log "Downloading Antigravity IDE $version for $AG_PLATFORM from Google..."
+  if [ -x "$root/$install_dir/antigravity-ide" ] && [ -n "$current_ver" ]; then
+    if [ "$current_ver" != "$version" ]; then
+      log "Updating Antigravity IDE from $current_ver to $version for $AG_PLATFORM from Google..."
+    else
+      log "Reinstalling Antigravity IDE $version for $AG_PLATFORM (--force)..."
+    fi
+  else
+    log "Downloading Antigravity IDE $version for $AG_PLATFORM from Google..."
+  fi
+
   local archive="$tmpdir/Antigravity-IDE.tar.gz"
   download_file "$url" "$archive"
   tar -tzf "$archive" > "$tmpdir/ide-list.txt"
@@ -495,7 +520,7 @@ StartupNotify=true
 StartupWMClass=antigravity-ide
 DESKTOP
   refresh_desktop_caches
-  log "Installed Antigravity IDE $version at $root/$install_dir"
+  log "Deployed Antigravity IDE $version at $root/$install_dir"
 }
 
 install_nautilus_extension() {
@@ -559,28 +584,64 @@ PY
 }
 
 install_manager_command() {
-  local installer_url="$INSTALLER_URL"
+  local default_url="https://quitearpit.github.io/antigravity-linux/install.sh"
+  local installer_url="${INSTALLER_URL:-$default_url}"
+  local cache_dir="/etc/antigravity-linux"
+  mkdir -p "$cache_dir"
+
+  # Cache the currently running installer script locally
+  if [ -n "${BASH_SOURCE[0]:-}" ] && [ -r "${BASH_SOURCE[0]}" ] && [ "${BASH_SOURCE[0]}" != "bash" ] && [ "${BASH_SOURCE[0]}" != "sh" ]; then
+    cp -f "${BASH_SOURCE[0]}" "$cache_dir/install.sh"
+    chmod 0755 "$cache_dir/install.sh"
+  elif [ ! -f "$cache_dir/install.sh" ]; then
+    curl -fsSL --connect-timeout 5 "$installer_url" -o "$cache_dir/install.sh" 2>/dev/null && chmod 0755 "$cache_dir/install.sh" || true
+  fi
+
   cat > /usr/local/bin/antigravity-linux <<SH
 #!/usr/bin/env bash
 set -euo pipefail
+
 SCRIPT_URL="$installer_url"
-if [ -z "\$SCRIPT_URL" ]; then
-  echo "No installer URL was stored." >&2
-  echo "Reinstall with ANTIGRAVITY_LINUX_INSTALLER_URL set, or run install.sh locally." >&2
+CACHE_DIR="$cache_dir"
+LOCAL_SCRIPT="\$CACHE_DIR/install.sh"
+
+if [ "\$(id -u)" -ne 0 ]; then
+  exec sudo -E "\$0" "\$@"
+fi
+
+mkdir -p "\$CACHE_DIR"
+
+TMP_FETCH=\$(mktemp "\$CACHE_DIR/install.sh.XXXXXX" 2>/dev/null || mktemp /tmp/install.sh.XXXXXX)
+FETCH_OK=0
+
+if curl -fsSL --connect-timeout 5 --retry 1 -H "Cache-Control: max-age=300" "\$SCRIPT_URL" -o "\$TMP_FETCH" 2>/dev/null; then
+  if bash -n "\$TMP_FETCH" 2>/dev/null; then
+    chmod 0755 "\$TMP_FETCH"
+    mv -f "\$TMP_FETCH" "\$LOCAL_SCRIPT"
+    FETCH_OK=1
+  fi
+fi
+rm -f "\$TMP_FETCH" 2>/dev/null || true
+
+if [ ! -f "\$LOCAL_SCRIPT" ]; then
+  echo "ERROR: Failed to fetch latest installer from \$SCRIPT_URL and no local cached installer was found." >&2
   exit 1
 fi
-if [ "\$(id -u)" -eq 0 ]; then
-  curl -fsSL "\$SCRIPT_URL" | env ANTIGRAVITY_LINUX_INSTALLER_URL="\$SCRIPT_URL" bash -s -- "\$@"
-else
-  curl -fsSL "\$SCRIPT_URL" | sudo -E env ANTIGRAVITY_LINUX_INSTALLER_URL="\$SCRIPT_URL" bash -s -- "\$@"
+
+if [ "\$FETCH_OK" -eq 0 ]; then
+  echo "Notice: Remote unreachable; running with locally cached installer (\$LOCAL_SCRIPT)." >&2
 fi
+
+exec bash "\$LOCAL_SCRIPT" "\$@"
 SH
   chmod +x /usr/local/bin/antigravity-linux
+
   cat > /usr/local/bin/update-antigravity <<'SH'
 #!/usr/bin/env bash
 exec antigravity-linux update --desktop "$@"
 SH
   chmod +x /usr/local/bin/update-antigravity
+
   cat > /usr/local/bin/update-antigravity-ide <<'SH'
 #!/usr/bin/env bash
 exec antigravity-linux update --ide "$@"
@@ -590,20 +651,33 @@ SH
 
 print_status() {
   log "Antigravity Linux status"
-  if [ -x /usr/local/bin/antigravity ]; then
+  if [ -x /usr/local/bin/antigravity ] || [ -d /opt/antigravity ]; then
     log "- Antigravity 2.0: installed ($(installed_version /opt/antigravity/.antigravity-linux-version))"
     log "  Command: /usr/local/bin/antigravity"
   else
-    log "- Antigravity 2.0: not installed by this helper"
+    log "- Antigravity 2.0: not installed"
   fi
-  if [ -x /usr/local/bin/antigravity-ide ]; then
+  if [ -x /usr/local/bin/antigravity-ide ] || [ -d /opt/antigravity-ide ]; then
     log "- Antigravity IDE: installed ($(installed_version /opt/antigravity-ide/.antigravity-linux-version))"
     log "  Command: /usr/local/bin/antigravity-ide"
   else
-    log "- Antigravity IDE: not installed by this helper"
+    log "- Antigravity IDE: not installed"
+  fi
+  local cli_path=""
+  if [ -x /usr/local/bin/agy ]; then
+    cli_path="/usr/local/bin/agy"
+  elif command -v agy >/dev/null 2>&1; then
+    cli_path=$(command -v agy)
+  fi
+  if [ -n "$cli_path" ]; then
+    local cli_ver
+    cli_ver=$("$cli_path" --version 2>/dev/null | head -n1 || echo "")
+    log "- Antigravity CLI: installed (${cli_ver:-active} at $cli_path)"
+  else
+    log "- Antigravity CLI: not installed"
   fi
   if [ -x /usr/local/bin/antigravity-linux ]; then
-    log "- Update helper: installed"
+    log "- Update helper: installed (/usr/local/bin/antigravity-linux)"
   else
     log "- Update helper: not installed"
   fi
@@ -632,28 +706,38 @@ print_downloads() {
 
 print_success_summary() {
   log ""
-  log "Antigravity Linux install complete."
+  log "Antigravity Linux operation complete."
   log ""
-  log "Installed:"
-  if [ "$INSTALL_DESKTOP" -eq 1 ]; then
-    log "- Antigravity 2.0: /usr/local/bin/antigravity"
+  log "Status:"
+  if [ "$INSTALL_DESKTOP" -eq 1 ] || [ -x /usr/local/bin/antigravity ]; then
+    local v
+    v=$(installed_version /opt/antigravity/.antigravity-linux-version)
+    log "- Antigravity 2.0: installed (v${v:-unknown}) -> /usr/local/bin/antigravity"
   fi
-  if [ "$INSTALL_IDE" -eq 1 ]; then
-    log "- Antigravity IDE: /usr/local/bin/antigravity-ide"
+  if [ "$INSTALL_IDE" -eq 1 ] || [ -x /usr/local/bin/antigravity-ide ]; then
+    local v
+    v=$(installed_version /opt/antigravity-ide/.antigravity-linux-version)
+    log "- Antigravity IDE: installed (v${v:-unknown}) -> /usr/local/bin/antigravity-ide"
   fi
-  if [ "$INSTALL_CLI" -eq 1 ]; then
-    log "- Antigravity CLI: ~/.local/bin/agy"
+  local cli_path=""
+  if [ -x /usr/local/bin/agy ]; then
+    cli_path="/usr/local/bin/agy"
+  elif command -v agy >/dev/null 2>&1; then
+    cli_path=$(command -v agy)
+  fi
+  if [ -n "$cli_path" ]; then
+    local cli_ver
+    cli_ver=$("$cli_path" --version 2>/dev/null | head -n1 || echo "")
+    log "- Antigravity CLI: installed (v${cli_ver:-active} at $cli_path)"
   fi
   log ""
-  log "Manage:"
-  log "- Status:    antigravity-linux --status"
-  log "- Update:    sudo antigravity-linux update --all"
-  log "- Uninstall: sudo antigravity-linux --uninstall"
-  if [ -z "$INSTALLER_URL" ]; then
-    log ""
-    log "Note: antigravity-linux was installed without a stored URL. Re-run this local script for updates or reinstall from a published URL."
-  fi
-  if [ "$INSTALL_IDE" -eq 1 ] && [ "$INSTALL_NAUTILUS" -eq 1 ]; then
+  log "Quick Commands:"
+  log "- Launchers:  antigravity  |  antigravity-ide  |  agy"
+  log "- TUI Update / Reinstall: sudo antigravity-linux"
+  log "- Helper Updaters:        sudo update-antigravity  |  sudo update-antigravity-ide"
+  log "- Status Check:           antigravity-linux --status"
+  log "- Full Uninstall:         sudo antigravity-linux --uninstall"
+  if [ "$INSTALL_IDE" -eq 1 ] && [ "$INSTALL_NAUTILUS" -eq 1 ] && command -v nautilus >/dev/null 2>&1; then
     log ""
     log "Folder open integration: use your file manager's Open With menu, or Nautilus context menu after restarting Files."
   fi
@@ -673,22 +757,113 @@ start_tui() {
 }
 
 run_stepper_wizard() {
+  local latest_desktop_ver="$1"
+  local latest_ide_ver="$2"
+
   local has_nautilus=0
   if command -v nautilus >/dev/null 2>&1; then
     has_nautilus=1
   fi
 
-  local opt_desktop=1
-  local opt_ide=1
-  local opt_cli=0
-  local opt_nautilus=$has_nautilus
+  local cur_desktop="" cur_ide="" cur_cli=""
+  if [ -x /usr/local/bin/antigravity ] || [ -d /opt/antigravity ]; then
+    cur_desktop=$(installed_version /opt/antigravity/.antigravity-linux-version)
+  fi
+  if [ -x /usr/local/bin/antigravity-ide ] || [ -d /opt/antigravity-ide ]; then
+    cur_ide=$(installed_version /opt/antigravity-ide/.antigravity-linux-version)
+  fi
+
+  local user_home=""
+  if [ -n "${SUDO_USER:-}" ] && [ "${SUDO_USER:-}" != "root" ]; then
+    user_home=$(getent passwd "$SUDO_USER" 2>/dev/null | cut -d: -f6 || echo "")
+  fi
+  local cli_bin=""
+  if [ -n "$user_home" ] && [ -x "$user_home/.local/bin/agy" ]; then
+    cli_bin="$user_home/.local/bin/agy"
+  elif [ -x /usr/local/bin/agy ]; then
+    cli_bin="/usr/local/bin/agy"
+  elif command -v agy >/dev/null 2>&1; then
+    cli_bin=$(command -v agy)
+  fi
+  if [ -n "$cli_bin" ]; then
+    cur_cli=$("$cli_bin" --version 2>/dev/null | head -n1 || echo "")
+  fi
+
+  # Dynamic descriptions based on installed vs latest release
+  local desktop_desc=""
+  if [ -n "$cur_desktop" ]; then
+    if [ -n "$latest_desktop_ver" ] && [ "$cur_desktop" != "$latest_desktop_ver" ]; then
+      desktop_desc="\033[1;33m(v$cur_desktop installed ➜ v$latest_desktop_ver update available)\033[0m"
+    else
+      desktop_desc="\033[90m(v${cur_desktop:-installed} • Up to date)\033[0m"
+    fi
+  else
+    if [ -n "$latest_desktop_ver" ]; then
+      desktop_desc="\033[90m(Not installed • v$latest_desktop_ver available)\033[0m"
+    else
+      desktop_desc="\033[90m(Google autonomous agent platform)\033[0m"
+    fi
+  fi
+
+  local ide_desc=""
+  if [ -n "$cur_ide" ]; then
+    if [ -n "$latest_ide_ver" ] && [ "$cur_ide" != "$latest_ide_ver" ]; then
+      ide_desc="\033[1;33m(v$cur_ide installed ➜ v$latest_ide_ver update available)\033[0m"
+    else
+      ide_desc="\033[90m(v${cur_ide:-installed} • Up to date)\033[0m"
+    fi
+  else
+    if [ -n "$latest_ide_ver" ]; then
+      ide_desc="\033[90m(Not installed • v$latest_ide_ver available)\033[0m"
+    else
+      ide_desc="\033[90m(Antigravity Code development studio)\033[0m"
+    fi
+  fi
+
+  local cli_desc=""
+  if [ -n "$cli_bin" ]; then
+    cli_desc="\033[90m(v${cur_cli:-active} installed at $cli_bin)\033[0m"
+  else
+    cli_desc="\033[90m(Official agy terminal command)\033[0m"
+  fi
+
+  local nautilus_desc=""
+  if [ $has_nautilus -eq 1 ]; then
+    if [ -f /usr/share/nautilus-python/extensions/open-in-antigravity-ide.py ]; then
+      nautilus_desc="\033[90m(Extension installed • Open With menu)\033[0m"
+    else
+      nautilus_desc="\033[90m(Right-click 'Open in Antigravity IDE')\033[0m"
+    fi
+  fi
+
+  local force_desc="\033[90m(Re-download & reinstall even if already up to date)\033[0m"
+
+  # Initial selections
+  local opt_desktop=$INSTALL_DESKTOP
+  local opt_ide=$INSTALL_IDE
+  local opt_cli=$INSTALL_CLI
+  local opt_nautilus=$INSTALL_NAUTILUS
+  local opt_force=$FORCE
+
   local cursor=0
-  local total_opts=3
-  [ $has_nautilus -eq 1 ] && total_opts=4
+  if [ "$EXPLICIT_PRODUCT" -eq 1 ]; then
+    if [ "$INSTALL_IDE" -eq 1 ] && [ "$INSTALL_DESKTOP" -eq 0 ]; then
+      cursor=1
+    elif [ "$INSTALL_CLI" -eq 1 ] && [ "$INSTALL_DESKTOP" -eq 0 ]; then
+      cursor=2
+    fi
+  else
+    opt_desktop=1
+    opt_ide=1
+    [ -n "$cli_bin" ] && opt_cli=1
+    opt_nautilus=$has_nautilus
+  fi
+
+  local total_opts=4
+  [ $has_nautilus -eq 1 ] && total_opts=5
 
   render_wizard() {
     clear >&4
-    # Spacing from the top
     printf '\n\n' >&4
     printf '\033[1;36m' >&4
     cat >&4 <<'BANNER'
@@ -707,36 +882,45 @@ run_stepper_wizard() {
                     ╚══════╝╚═╝╚═╝  ╚═══╝ ╚═════╝ ╚═╝  ╚═╝
 BANNER
     printf '\033[0m' >&4
-    printf '\n\033[1;37m   Interactive Installer (Linux %s)\033[0m\n' "$AG_PLATFORM" >&4
+    printf '\n\033[1;37m   Interactive Installer & Updater (Linux %s)\033[0m\n' "$AG_PLATFORM" >&4
     printf '\033[90m   ─────────────────────────────────────────────────────────────────────────────\033[0m\n\n' >&4
 
-    printf '   \033[1;32m[✓] 1. Architecture & Pre-flight\033[0m   (Target: %s, UID: %s)\n' "$AG_PLATFORM" "$(id -u)" >&4
-    printf '   \033[1;36m[●] 2. Component Selection\033[0m         Choose packages and desktop features\n' >&4
-    printf '   \033[90m[ ] 3. Download & Deploy\033[0m           Official Google release tarballs\n\n' >&4
+    printf '   \033[1;32m[✓] 1. Architecture & Release Info\033[0m   (Target: %s, Latest: Desktop %s, IDE %s)\n' "$AG_PLATFORM" "${latest_desktop_ver:-unknown}" "${latest_ide_ver:-unknown}" >&4
+    printf '   \033[1;36m[●] 2. Component Selection\033[0m         Choose packages to install, update, or reinstall\n' >&4
+    printf '   \033[90m[ ] 3. Download & Deploy\033[0m           Fetch official Google release tarballs\n\n' >&4
 
-    printf '   \033[1;37mSelect components to install:\033[0m\n\n' >&4
+    printf '   \033[1;37mSelect components to install or update:\033[0m\n\n' >&4
 
-    local c0=" " c1=" " c2=" " c3=" "
+    local c0=" " c1=" " c2=" " c3=" " c4=" "
     [ $cursor -eq 0 ] && c0="\033[1;36m❯\033[0m"
     [ $cursor -eq 1 ] && c1="\033[1;36m❯\033[0m"
     [ $cursor -eq 2 ] && c2="\033[1;36m❯\033[0m"
-    [ $cursor -eq 3 ] && c3="\033[1;36m❯\033[0m"
+    if [ $has_nautilus -eq 1 ]; then
+      [ $cursor -eq 3 ] && c3="\033[1;36m❯\033[0m"
+      [ $cursor -eq 4 ] && c4="\033[1;36m❯\033[0m"
+    else
+      [ $cursor -eq 3 ] && c4="\033[1;36m❯\033[0m"
+    fi
 
-    local d0="[ ]" d1="[ ]" d2="[ ]" d3="[ ]"
+    local d0="[ ]" d1="[ ]" d2="[ ]" d3="[ ]" d4="[ ]"
     [ $opt_desktop -eq 1 ] && d0="\033[1;32m[✓]\033[0m"
     [ $opt_ide -eq 1 ] && d1="\033[1;32m[✓]\033[0m"
     [ $opt_cli -eq 1 ] && d2="\033[1;32m[✓]\033[0m"
     [ $opt_nautilus -eq 1 ] && d3="\033[1;32m[✓]\033[0m"
+    [ $opt_force -eq 1 ] && d4="\033[1;33m[✓]\033[0m"
 
-    printf '   %b %b Antigravity 2.0 Desktop     \033[90m(Google autonomous agent platform)\033[0m\n' "$c0" "$d0" >&4
-    printf '   %b %b Antigravity IDE             \033[90m(Antigravity Code development studio)\033[0m\n' "$c1" "$d1" >&4
-    printf '   %b %b Antigravity CLI             \033[90m(Official agy terminal command)\033[0m\n' "$c2" "$d2" >&4
+    printf '   %b %b Antigravity 2.0 Desktop     %b\n' "$c0" "$d0" "$desktop_desc" >&4
+    printf '   %b %b Antigravity IDE             %b\n' "$c1" "$d1" "$ide_desc" >&4
+    printf '   %b %b Antigravity CLI (agy)       %b\n' "$c2" "$d2" "$cli_desc" >&4
 
     if [ $has_nautilus -eq 1 ]; then
-      printf '   %b %b Nautilus Context Menu       \033[90m(Right-click "Open in Antigravity IDE")\033[0m\n\n' "$c3" "$d3" >&4
+      printf '   %b %b Nautilus Context Menu       %b\n' "$c3" "$d3" "$nautilus_desc" >&4
     else
-      printf '     \033[90m[—] Nautilus Context Menu       (Disabled: Nautilus not detected on system)\033[0m\n\n' >&4
+      printf '     \033[90m[—] Nautilus Context Menu       (Disabled: Nautilus not detected on system)\033[0m\n' >&4
     fi
+
+    printf '\n' >&4
+    printf '   %b %b Force Reinstall / Overwrite %b\n\n' "$c4" "$d4" "$force_desc" >&4
 
     printf '\033[90m   ─────────────────────────────────────────────────────────────────────────────\033[0m\n' >&4
     printf '   \033[1;33mControls:\033[0m [↑/↓] Navigate  •  [Space] Toggle  •  [Enter] Proceed  •  [q] Quit\n' >&4
@@ -758,16 +942,22 @@ BANNER
         cursor=$(( (cursor + 1) % total_opts ))
         ;;
       " ") # Space (toggle)
-        case $cursor in
-          0) opt_desktop=$(( 1 - opt_desktop )) ;;
-          1) opt_ide=$(( 1 - opt_ide )) ;;
-          2) opt_cli=$(( 1 - opt_cli )) ;;
-          3)
-            if [ $has_nautilus -eq 1 ]; then
-              opt_nautilus=$(( 1 - opt_nautilus ))
-            fi
-            ;;
-        esac
+        if [ $has_nautilus -eq 1 ]; then
+          case $cursor in
+            0) opt_desktop=$(( 1 - opt_desktop )) ;;
+            1) opt_ide=$(( 1 - opt_ide )) ;;
+            2) opt_cli=$(( 1 - opt_cli )) ;;
+            3) opt_nautilus=$(( 1 - opt_nautilus )) ;;
+            4) opt_force=$(( 1 - opt_force )) ;;
+          esac
+        else
+          case $cursor in
+            0) opt_desktop=$(( 1 - opt_desktop )) ;;
+            1) opt_ide=$(( 1 - opt_ide )) ;;
+            2) opt_cli=$(( 1 - opt_cli )) ;;
+            3) opt_force=$(( 1 - opt_force )) ;;
+          esac
+        fi
         ;;
       "") # Enter (confirm)
         if [ $opt_desktop -eq 0 ] && [ $opt_ide -eq 0 ] && [ $opt_cli -eq 0 ]; then
@@ -777,7 +967,7 @@ BANNER
         ;;
       q|Q|$'\x03') # Quit
         cleanup_tui
-        printf '\nInstallation aborted by user.\n'
+        printf '\nOperation cancelled by user.\n'
         exit 0
         ;;
     esac
@@ -787,9 +977,12 @@ BANNER
   INSTALL_IDE=$opt_ide
   INSTALL_CLI=$opt_cli
   INSTALL_NAUTILUS=$opt_nautilus
+  FORCE=$opt_force
 }
 
 render_step3_header() {
+  local latest_desktop_ver="$1"
+  local latest_ide_ver="$2"
   clear >&4
   printf '\n\n' >&4
   printf '\033[1;36m' >&4
@@ -809,28 +1002,29 @@ render_step3_header() {
                     ╚══════╝╚═╝╚═╝  ╚═══╝ ╚═════╝ ╚═╝  ╚═╝
 BANNER
   printf '\033[0m' >&4
-  printf '\n\033[1;37m   Interactive Installer (Linux %s)\033[0m\n' "$AG_PLATFORM" >&4
+  printf '\n\033[1;37m   Interactive Installer & Updater (Linux %s)\033[0m\n' "$AG_PLATFORM" >&4
   printf '\033[90m   ─────────────────────────────────────────────────────────────────────────────\033[0m\n\n' >&4
 
-  printf '   \033[1;32m[✓] 1. Architecture & Pre-flight\033[0m   (Target: %s, UID: %s)\n' "$AG_PLATFORM" "$(id -u)" >&4
+  printf '   \033[1;32m[✓] 1. Architecture & Release Info\033[0m   (Target: %s, Latest: Desktop %s, IDE %s)\n' "$AG_PLATFORM" "${latest_desktop_ver:-unknown}" "${latest_ide_ver:-unknown}" >&4
 
   local sel=()
   [ "$INSTALL_DESKTOP" -eq 1 ] && sel+=("Desktop")
   [ "$INSTALL_IDE" -eq 1 ] && sel+=("IDE")
   [ "$INSTALL_CLI" -eq 1 ] && sel+=("CLI")
   [ "$INSTALL_NAUTILUS" -eq 1 ] && sel+=("Nautilus")
+  [ "$FORCE" -eq 1 ] && sel+=("Force Reinstall")
   local sel_summary
   sel_summary=$(IFS=', '; echo "${sel[*]}")
 
   printf '   \033[1;32m[✓] 2. Component Selection\033[0m         (Selected: %s)\n' "$sel_summary" >&4
-  printf '   \033[1;36m[●] 3. Download & Deploy\033[0m           Installing selected components...\n\n' >&4
+  printf '   \033[1;36m[●] 3. Download & Deploy\033[0m           Processing selected components...\n\n' >&4
   printf '\033[90m   ─────────────────────────────────────────────────────────────────────────────\033[0m\n\n' >&4
   tput cnorm >&4 2>/dev/null || true
 }
 
 uninstall_all() {
   require_root_or_reexec
-  rm -rf /opt/antigravity /opt/antigravity.new /opt/antigravity.previous /opt/antigravity-ide /opt/antigravity-ide.new /opt/antigravity-ide.previous
+  rm -rf /opt/antigravity /opt/antigravity.new /opt/antigravity.previous /opt/antigravity-ide /opt/antigravity-ide.new /opt/antigravity-ide.previous /etc/antigravity-linux
   rm -f /usr/local/bin/antigravity /usr/local/bin/antigravity-ide /usr/local/bin/update-antigravity /usr/local/bin/update-antigravity-ide /usr/local/bin/antigravity-linux
   rm -f /usr/share/applications/antigravity.desktop /usr/share/applications/antigravity-ide.desktop
   rm -f /usr/share/icons/hicolor/512x512/apps/antigravity.png /usr/share/icons/hicolor/512x512/apps/antigravity-ide.png
@@ -855,31 +1049,35 @@ main() {
 
   require_root_or_reexec
 
-  local is_interactive=0
-  if [ "$EXPLICIT_PRODUCT" -eq 0 ] && [ "$YES" -eq 0 ] && [ -t 1 ] && [ -r /dev/tty ] && [ -w /dev/tty ]; then
-    is_interactive=1
-  fi
-
-  if [ "$is_interactive" -eq 1 ]; then
-    if start_tui; then
-      run_stepper_wizard
-      render_step3_header
-    fi
-  fi
-
   local tmp_parent="${TMPDIR:-/var/tmp}"
   mkdir -p "$tmp_parent"
   tmpdir=$(mktemp -d "$tmp_parent/$PROJECT_NAME.XXXXXX")
   trap cleanup_all EXIT INT TERM
 
-  install_deps
-  local js
+  local js=""
+  local latest_desktop_ver="" latest_ide_ver=""
   js=$(resolve_download_source "$tmpdir")
+  read -r latest_desktop_ver _ < <(resolve_desktop_download "$js" 2>/dev/null || echo "")
+  read -r latest_ide_ver _ < <(resolve_ide_download "$js" 2>/dev/null || echo "")
+
+  local is_interactive=0
+  if [ "$YES" -eq 0 ] && [ -t 1 ] && [ -r /dev/tty ] && [ -w /dev/tty ]; then
+    is_interactive=1
+  fi
+
+  if [ "$is_interactive" -eq 1 ]; then
+    if start_tui; then
+      run_stepper_wizard "$latest_desktop_ver" "$latest_ide_ver"
+      render_step3_header "$latest_desktop_ver" "$latest_ide_ver"
+    fi
+  fi
+
+  install_deps
   [ "$INSTALL_DESKTOP" -eq 1 ] && install_desktop_app "$tmpdir" "$js"
   [ "$INSTALL_IDE" -eq 1 ] && install_ide_app "$tmpdir" "$js"
   install_nautilus_extension
   if [ "$INSTALL_CLI" -eq 1 ]; then
-    log "Running Google's official Antigravity CLI installer for the non-root user..."
+    log "Running Google's official Antigravity CLI installer/updater..."
     if [ -n "${SUDO_USER:-}" ] && [ "${SUDO_USER:-}" != "root" ]; then
       if [ "$IS_TUI_ACTIVE" -eq 1 ]; then
         sudo -u "$SUDO_USER" -H bash -lc "curl -fsSL '$CLI_INSTALLER' | bash" >&4 2>&4
